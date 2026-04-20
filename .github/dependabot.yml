@@ -1,0 +1,20 @@
+# Dependabot configuration for SwearJar
+# Runs once a month on the 16th of each month.
+
+version: 2
+updates:
+  # Keep npm dependencies in api/ up to date
+  - package-ecosystem: "npm"
+    directory: "/api"
+    schedule:
+      interval: "monthly"
+      day: 16
+    open-pull-requests-limit: 10
+
+  # Keep GitHub Actions versions up to date
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: 16
+    open-pull-requests-limit: 10
