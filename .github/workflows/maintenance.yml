@@ -1,0 +1,124 @@
+name: Maintenance
+
+on:
+  schedule:
+    - cron: '0 4 * * *'    # Daily 04:00 UTC — branch cleanup + stale check
+    - cron: '28 8 * * 2'   # Weekly Tuesday 08:28 UTC — kept for stale alignment
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  # ────────────────────────────────────────────────────────────
+  # JOB 1 — Mark stale issues and PRs
+  # ────────────────────────────────────────────────────────────
+  stale:
+    name: Mark Stale Issues & PRs
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          stale-issue-message: >
+            This issue has been automatically marked as stale because it has
+            not had recent activity. It will be closed if no further activity
+            occurs. Thank you for your contributions.
+          stale-pr-message: >
+            This PR has been automatically marked as stale because it has not
+            had recent activity. It will be closed if no further activity
+            occurs. Thank you for your contributions.
+          stale-issue-label: 'no-issue-activity'
+          stale-pr-label: 'no-pr-activity'
+          days-before-stale: 60
+          days-before-close: 7
+          days-before-pr-stale: 30
+          days-before-pr-close: 7
+
+  # ────────────────────────────────────────────────────────────
+  # JOB 2 — Delete merged codex/ and copilot/ branches
+  # Only deletes branches whose PR was merged >= 2 days ago.
+  # ────────────────────────────────────────────────────────────
+  cleanup-branches:
+    name: Delete Merged Codex & Copilot Branches
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Install jq
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq jq
+
+      - name: Delete old merged branches
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          OWNER="${REPO%/*}"
+          REPO_NAME="${REPO#*/}"
+          TWO_DAYS_SECONDS=$((2 * 24 * 60 * 60))
+          NOW_TS=$(date -u +%s)
+
+          echo "Scanning branches in $OWNER/$REPO_NAME ..."
+
+          page=1
+          while :; do
+            echo "Fetching branches page $page..."
+            RESPONSE=$(curl -sS \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$OWNER/$REPO_NAME/branches?per_page=100&page=$page")
+
+            COUNT=$(echo "$RESPONSE" | jq 'length')
+            if [ "$COUNT" -eq 0 ]; then
+              echo "No more branches to process."
+              break
+            fi
+
+            echo "$RESPONSE" | jq -r '.[].name' | while read -r BRANCH; do
+              if [[ "$BRANCH" == codex/* || "$BRANCH" == copilot/* ]]; then
+                echo "Processing branch: $BRANCH"
+
+                PRS=$(curl -sS \
+                  -H "Authorization: Bearer $GITHUB_TOKEN" \
+                  -H "Accept: application/vnd.github+json" \
+                  "https://api.github.com/repos/$OWNER/$REPO_NAME/pulls?state=closed&head=$OWNER:$BRANCH&per_page=10")
+
+                MERGED_AT=$(echo "$PRS" | jq -r \
+                  '[.[] | select(.merged_at != null)][0].merged_at // empty')
+
+                if [ -z "$MERGED_AT" ]; then
+                  echo "  → No merged PR found for $BRANCH (skipping)."
+                  continue
+                fi
+
+                MERGED_TS=$(date -d "$MERGED_AT" +%s)
+                AGE_SECONDS=$((NOW_TS - MERGED_TS))
+
+                if [ "$AGE_SECONDS" -ge "$TWO_DAYS_SECONDS" ]; then
+                  echo "  → Branch $BRANCH merged at $MERGED_AT (>= 2 days ago). Deleting..."
+
+                  DELETE_STATUS=$(curl -sS -o /dev/null -w "%{http_code}" \
+                    -X DELETE \
+                    -H "Authorization: Bearer $GITHUB_TOKEN" \
+                    -H "Accept: application/vnd.github+json" \
+                    "https://api.github.com/repos/$OWNER/$REPO_NAME/git/refs/heads/$BRANCH")
+
+                  if [ "$DELETE_STATUS" -eq 204 ]; then
+                    echo "  ✓ Successfully deleted $BRANCH"
+                  else
+                    echo "  ✗ Failed to delete $BRANCH (HTTP $DELETE_STATUS)"
+                  fi
+                else
+                  echo "  → Branch $BRANCH merged less than 2 days ago (skipping)."
+                fi
+              fi
+            done
+
+            page=$((page + 1))
+          done
