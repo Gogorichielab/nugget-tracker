@@ -1,1 +1,23 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Azure Functions
+local.settings.json
+.python_packages/
+__pycache__/
+*.pyc
+.funcignore
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
 h
+
+# IDE
+.vscode/
+.idea/

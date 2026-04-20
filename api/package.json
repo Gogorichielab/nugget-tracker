@@ -1,0 +1,14 @@
+{
+  "name": "cubs-nuggets-api",
+  "version": "1.0.0",
+  "description": "Azure Functions API for Cubs Nuggets Tracker",
+  "scripts": {
+    "start": "func start"
+  },
+  "dependencies": {
+    "@azure/data-tables": "^13.2.2"
+  },
+  "devDependencies": {
+    "@azure/functions": "^4.3.0"
+  }
+}

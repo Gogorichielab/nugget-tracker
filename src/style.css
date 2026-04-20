@@ -1,0 +1,333 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap');
+
+:root {
+  --cubs-blue:  #0E3386;
+  --cubs-red:   #CC3433;
+  --cfa-red:    #DD0031;
+  --gold:       #F5C518;
+  --cream:      #f5f0e8;
+  --white:      #ffffff;
+  --gray-100:   #f0ebe0;
+  --gray-200:   #d8d0be;
+  --gray-700:   #4a4236;
+  --text:       #1a1008;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--cream);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+.site-header {
+  background: var(--cubs-blue);
+  color: var(--white);
+  padding: 0 1.5rem;
+}
+
+.header-stripe {
+  background: var(--cubs-red);
+  height: 6px;
+}
+
+.header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem 0;
+}
+
+.header-logo {
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+}
+
+.header-text h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.2rem;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.header-text p {
+  font-size: 0.88rem;
+  opacity: 0.82;
+  margin-top: 0.2rem;
+}
+
+/* ── Main layout ── */
+.main-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+/* ── Stat cards ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2.5rem;
+}
+
+.stat-card {
+  background: var(--white);
+  border-radius: 10px;
+  padding: 1.4rem 1.5rem 1.2rem;
+  border-top: 5px solid var(--cubs-blue);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+.stat-card.accent-red   { border-top-color: var(--cubs-red); }
+.stat-card.accent-gold  { border-top-color: var(--gold); }
+.stat-card.accent-cfa   { border-top-color: var(--cfa-red); }
+
+.stat-card .label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gray-700);
+  margin-bottom: 0.5rem;
+}
+
+.stat-card .value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.6rem;
+  color: var(--cubs-blue);
+  line-height: 1;
+}
+
+.stat-card .sub {
+  font-size: 0.8rem;
+  color: var(--gray-700);
+  margin-top: 0.3rem;
+}
+
+/* ── Section heading ── */
+.section-heading {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  letter-spacing: 0.05em;
+  color: var(--cubs-blue);
+  margin-bottom: 1rem;
+  border-bottom: 3px solid var(--cubs-red);
+  padding-bottom: 0.3rem;
+  display: inline-block;
+}
+
+/* ── Table ── */
+.table-wrapper {
+  overflow-x: auto;
+  background: var(--white);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.93rem;
+}
+
+thead th {
+  background: var(--cubs-blue);
+  color: var(--white);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  padding: 0.85rem 1rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--gray-100);
+  transition: background 0.12s;
+}
+
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--gray-100); }
+
+tbody td {
+  padding: 0.8rem 1rem;
+  vertical-align: middle;
+}
+
+.redemption-badge {
+  display: inline-block;
+  background: var(--cfa-red);
+  color: var(--white);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 20px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--gray-700);
+  font-size: 0.95rem;
+}
+
+/* ── Footer ── */
+.site-footer {
+  text-align: center;
+  padding: 1.5rem;
+  font-size: 0.78rem;
+  color: var(--gray-700);
+  border-top: 1px solid var(--gray-200);
+}
+
+/* ── Admin link ── */
+.admin-link {
+  float: right;
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.55);
+  text-decoration: none;
+  padding: 0.25rem 0;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.admin-link:hover { color: var(--white); }
+
+/* ── Buttons ── */
+.btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.45rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.btn:hover { opacity: 0.85; }
+.btn-primary { background: var(--cubs-blue); color: var(--white); }
+.btn-danger  { background: var(--cubs-red);  color: var(--white); }
+.btn-warning { background: var(--gold);      color: var(--text); }
+
+/* ── Forms ── */
+.form-card {
+  background: var(--white);
+  border-radius: 10px;
+  padding: 1.75rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  margin-bottom: 2rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gray-700);
+  margin-bottom: 0.3rem;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.92rem;
+  background: var(--cream);
+  color: var(--text);
+  transition: border-color 0.15s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--cubs-blue);
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  background: var(--cubs-blue);
+  color: var(--white);
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+  z-index: 1000;
+}
+
+.toast.show { opacity: 1; pointer-events: auto; }
+.toast.error { background: var(--cubs-red); }
+
+/* ── Password gate ── */
+.password-gate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.password-card {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 2.5rem 2rem;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+}
+
+.password-card h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.8rem;
+  color: var(--cubs-blue);
+  margin-bottom: 1.25rem;
+  letter-spacing: 0.05em;
+}
+
+.password-card input {
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 6px;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  background: var(--cream);
+  text-align: center;
+  letter-spacing: 0.1em;
+}
+
+.password-card input:focus { outline: none; border-color: var(--cubs-blue); }
+
+@media (max-width: 600px) {
+  .header-text h1 { font-size: 1.6rem; }
+  .stat-card .value { font-size: 2rem; }
+}

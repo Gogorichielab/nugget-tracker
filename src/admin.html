@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Cubs Nuggets Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="header-stripe"></div>
+<header class="site-header">
+  <div class="header-inner">
+    <svg class="header-logo" viewBox="0 0 60 60" aria-hidden="true">
+      <circle cx="30" cy="30" r="30" fill="#CC3433"/>
+      <text x="30" y="44" text-anchor="middle" font-family="Georgia,serif"
+            font-weight="bold" font-size="38" fill="#ffffff">C</text>
+    </svg>
+    <div class="header-text">
+      <h1>Cubs Nuggets — Admin</h1>
+      <p>Manage qualifying pitcher events</p>
+    </div>
+    <a href="index.html" class="admin-link">← Public site</a>
+  </div>
+</header>
+
+<main class="main-content">
+
+  <!-- Password gate -->
+  <div class="password-gate" id="password-gate">
+    <div class="password-card">
+      <h2>Admin Login</h2>
+      <input type="password" id="password-input" placeholder="Enter password" autofocus />
+      <button class="btn btn-primary" style="width:100%" onclick="adminLogin()">Unlock</button>
+      <p id="pw-error" style="color:var(--cubs-red);font-size:0.82rem;margin-top:0.75rem"></p>
+    </div>
+  </div>
+
+  <!-- Admin panel (hidden until authenticated) -->
+  <div id="admin-panel" style="display:none">
+
+    <div class="section-heading" id="form-heading">Add Event</div>
+
+    <div class="form-card">
+      <input type="hidden" id="edit-id" />
+      <div class="form-row">
+        <div class="form-group">
+          <label for="field-date">Game Date</label>
+          <input type="date" id="field-date" required />
+        </div>
+        <div class="form-group">
+          <label for="field-pitcher">Pitcher</label>
+          <input type="text" id="field-pitcher" placeholder="Full name" required />
+        </div>
+        <div class="form-group">
+          <label for="field-inning">Inning</label>
+          <input type="number" id="field-inning" min="1" max="20" placeholder="e.g. 7" required />
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="submitForm()">Save Event</button>
+        <button class="btn" style="background:var(--gray-200)" id="cancel-btn"
+                onclick="cancelEdit()" style="display:none">Cancel</button>
+      </div>
+    </div>
+
+    <div class="section-heading">All Events</div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Game Date</th>
+            <th>Redemption Date</th>
+            <th>Pitcher</th>
+            <th>Inning</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="admin-tbody">
+          <tr><td colspan="5" class="empty-state">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<footer class="site-footer">
+  &copy; <span id="footer-year"></span> Cubs Free Nuggets Tracker
+</footer>
+
+<script src="admin.js"></script>
+</body>
+</html>
