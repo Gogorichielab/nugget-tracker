@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cubs Free Nuggets Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="header-stripe"></div>
+<header class="site-header">
+  <div class="header-inner">
+    <!-- Cubs "C" SVG logo placeholder -->
+    <svg class="header-logo" viewBox="0 0 60 60" aria-hidden="true">
+      <circle cx="30" cy="30" r="30" fill="#CC3433"/>
+      <text x="30" y="44" text-anchor="middle" font-family="Georgia,serif"
+            font-weight="bold" font-size="38" fill="#ffffff">C</text>
+    </svg>
+    <div class="header-text">
+      <h1>Cubs Free Nuggets Tracker</h1>
+      <p>Every time a Cubs pitcher fans 3 in one inning at home, Chick-fil-A's on us the next day.</p>
+    </div>
+    <a href="admin.html" class="admin-link">Admin</a>
+  </div>
+</header>
+
+<main class="main-content">
+
+  <!-- Stat Cards -->
+  <div class="stats-grid">
+    <div class="stat-card accent-blue">
+      <div class="label">Qualifying Events This Season</div>
+      <div class="value" id="stat-total">—</div>
+      <div class="sub">3-strikeout innings at Wrigley</div>
+    </div>
+    <div class="stat-card accent-red">
+      <div class="label">Top Pitcher</div>
+      <div class="value" id="stat-pitcher-name">—</div>
+      <div class="sub" id="stat-pitcher-count"></div>
+    </div>
+    <div class="stat-card accent-gold">
+      <div class="label">Days Since Last Event</div>
+      <div class="value" id="stat-days">—</div>
+      <div class="sub" id="stat-last-date"></div>
+    </div>
+  </div>
+
+  <!-- Events Table -->
+  <div class="section-heading">Free Nugget Events</div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Game Date</th>
+          <th>Redemption Date</th>
+          <th>Pitcher</th>
+          <th>Inning</th>
+        </tr>
+      </thead>
+      <tbody id="events-tbody">
+        <tr><td colspan="4" class="empty-state">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  &copy; <span id="footer-year"></span> Cubs Free Nuggets Tracker &mdash;
+  Not affiliated with the Chicago Cubs or Chick-fil-A.
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
