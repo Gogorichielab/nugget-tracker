@@ -6,7 +6,8 @@
     "start": "func start"
   },
   "dependencies": {
-    "@azure/data-tables": "^13.2.2"
+    "@azure/data-tables": "^13.2.2",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@azure/functions": "^4.3.0"

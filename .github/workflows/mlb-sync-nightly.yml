@@ -35,9 +35,14 @@ jobs:
             "$URL")
 
           echo "HTTP $HTTP_CODE"
-          cat response.json
+          if [ -s response.json ]; then
+            echo "Response body:"
+            cat response.json
+          else
+            echo "Response body: <empty>"
+          fi
 
           if [ "$HTTP_CODE" -ge 400 ]; then
-            echo "mlb-sync call failed"
+            echo "mlb-sync call failed with HTTP $HTTP_CODE"
             exit 1
           fi
