@@ -1,0 +1,43 @@
+name: MLB Sync Nightly
+
+on:
+  schedule:
+    - cron: "30 22 * * *"
+  workflow_dispatch:
+
+jobs:
+  run-mlb-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger mlb-sync endpoint
+        env:
+          SWA_BASE_URL: ${{ secrets.SWA_BASE_URL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SWA_BASE_URL:-}" ]; then
+            echo "Missing required secret: SWA_BASE_URL"
+            exit 1
+          fi
+
+          if [ -z "${ADMIN_PASSWORD:-}" ]; then
+            echo "Missing required secret: ADMIN_PASSWORD"
+            exit 1
+          fi
+
+          URL="${SWA_BASE_URL%/}/api/mlb-sync"
+          echo "Calling $URL"
+
+          HTTP_CODE=$(curl -sS -o response.json -w "%{http_code}" \
+            -X POST \
+            -H "x-admin-password: ${ADMIN_PASSWORD}" \
+            "$URL")
+
+          echo "HTTP $HTTP_CODE"
+          cat response.json
+
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "mlb-sync call failed"
+            exit 1
+          fi

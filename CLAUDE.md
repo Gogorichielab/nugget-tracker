@@ -19,7 +19,7 @@ An Azure Static Web App that tracks qualifying Chicago Cubs pitching performance
 ├── api/                  ← Azure Functions (Node 18)
 │   ├── events/           ← GET + POST /api/events
 │   ├── events-item/      ← PUT + DELETE /api/events/{id}
-│   ├── mlb-sync/         ← Scheduled function (nightly, 10:30 PM UTC)
+│   ├── mlb-sync/         ← HTTP endpoint invoked nightly by GitHub Actions
 │   ├── host.json
 │   └── package.json
 └── staticwebapp.config.json
@@ -34,7 +34,7 @@ An Azure Static Web App that tracks qualifying Chicago Cubs pitching performance
 
 ### MLB auto-detection (`mlb-sync`)
 
-Runs nightly at 22:30 UTC. Logic:
+Runs nightly at 22:30 UTC via GitHub Actions cron calling `/api/mlb-sync`. Logic:
 1. Hits `https://statsapi.mlb.com/api/v1/schedule?teamId=112&date={today}` to find a Final Cubs home game.
 2. Fetches `/api/v1.1/game/{gamePk}/feed/live` play-by-play.
 3. Counts strikeouts by pitcher per inning (top half only — Cubs pitch when away team bats).

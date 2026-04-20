@@ -3,6 +3,7 @@ const https = require("https");
 const { v4: uuidv4 } = require("uuid");
 
 const CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const TABLE_NAME = "NuggetEvents";
 const CUBS_TEAM_ID = 112;
 const MLB_BASE = "https://statsapi.mlb.com";
@@ -37,9 +38,22 @@ async function alreadyExists(client, gameDate, pitcher, inning) {
   return false;
 }
 
-module.exports = async function (context) {
+module.exports = async function (context, req) {
+  const providedPassword = req.headers["x-admin-password"];
+  if (!ADMIN_PASSWORD || providedPassword !== ADMIN_PASSWORD) {
+    context.res = {
+      status: 401,
+      body: { error: "Unauthorized" },
+    };
+    return;
+  }
+
   if (!CONNECTION_STRING) {
     context.log("AZURE_STORAGE_CONNECTION_STRING not set — skipping mlb-sync");
+    context.res = {
+      status: 500,
+      body: { error: "Missing AZURE_STORAGE_CONNECTION_STRING" },
+    };
     return;
   }
 
@@ -58,6 +72,10 @@ module.exports = async function (context) {
 
   if (!homeGame) {
     context.log("No completed Cubs home game today");
+    context.res = {
+      status: 200,
+      body: { message: "No completed Cubs home game today" },
+    };
     return;
   }
 
@@ -92,6 +110,10 @@ module.exports = async function (context) {
 
   if (qualifying.length === 0) {
     context.log("No 3-strikeout innings found");
+    context.res = {
+      status: 200,
+      body: { message: "No 3-strikeout innings found" },
+    };
     return;
   }
 
@@ -102,6 +124,7 @@ module.exports = async function (context) {
   redemptionDate.setDate(redemptionDate.getDate() + 1);
   const rd = redemptionDate.toISOString().split("T")[0];
 
+  let insertedCount = 0;
   for (const [key] of qualifying) {
     const [inningStr, pitcher] = key.split(/:(.+)/); // split on first colon
     const inning = parseInt(inningStr, 10);
@@ -121,6 +144,17 @@ module.exports = async function (context) {
     };
 
     await client.createEntity(entity);
+    insertedCount += 1;
     context.log(`Inserted event: ${pitcher} inning ${inning} on ${today}`);
   }
+
+  context.res = {
+    status: 200,
+    body: {
+      message: "mlb-sync completed",
+      gameDate: today,
+      qualifyingCount: qualifying.length,
+      insertedCount,
+    },
+  };
 };
