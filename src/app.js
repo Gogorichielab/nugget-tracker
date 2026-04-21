@@ -8,15 +8,35 @@
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     events = await res.json();
   } catch (e) {
+    renderBanner([]);
     renderTable([]);
     renderStats([]);
     console.error("Failed to load events:", e);
     return;
   }
 
+  renderBanner(events);
   renderStats(events);
   renderTable(events);
 })();
+
+function renderBanner(events) {
+  const banner   = document.getElementById("hero-banner");
+  const headline = document.getElementById("hero-banner-headline");
+  const sub      = document.getElementById("hero-banner-sub");
+  const today    = new Date().toISOString().split("T")[0];
+  const isNuggetDay = events.some((e) => e.redemptionDate === today);
+
+  banner.classList.toggle("is-nugget-day", isNuggetDay);
+  banner.classList.toggle("is-not-nugget-day", !isNuggetDay);
+  headline.textContent = isNuggetDay
+    ? "🍗 FREE NUGGETS TODAY"
+    : "No nuggets today";
+  sub.textContent = isNuggetDay
+    ? "Redeemable until close"
+    : "Check back after the next home game.";
+  banner.hidden = false;
+}
 
 function renderStats(events) {
   const totalEl       = document.getElementById("stat-total");
