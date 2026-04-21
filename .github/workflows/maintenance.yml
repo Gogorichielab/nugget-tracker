@@ -3,7 +3,6 @@ name: Maintenance
 on:
   schedule:
     - cron: '0 4 * * *'    # Daily 04:00 UTC — branch cleanup + stale check
-    - cron: '28 8 * * 2'   # Weekly Tuesday 08:28 UTC — kept for stale alignment
   workflow_dispatch:
 
 permissions:
@@ -49,9 +48,6 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Install jq
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq jq
-
       - name: Delete old merged branches
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

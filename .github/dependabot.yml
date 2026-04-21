@@ -1,4 +1,4 @@
-# Dependabot configuration for SwearJar
+# Dependabot configuration for nugget-tracker
 # Runs once a month on the 16th of each month.
 
 version: 2
