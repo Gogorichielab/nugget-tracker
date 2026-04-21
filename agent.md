@@ -130,6 +130,46 @@ cd src && npx serve .
 npx @azure/static-web-apps-cli start src --api-location api
 ```
 
+## PR Naming Conventions
+
+All pull requests should follow this naming format: `[TYPE] Brief description`
+
+### PR Type Prefixes
+
+| Prefix | Usage | Examples |
+|---|---|---|
+| `[feat]` | New feature or functionality | `[feat] Add event filtering by date range` |
+| `[fix]` | Bug fixes | `[fix] Correct strikeout calculation logic` |
+| `[docs]` | Documentation updates | `[docs] Update API endpoint documentation` |
+| `[refactor]` | Code restructuring (no behavior change) | `[refactor] Extract event validation logic` |
+| `[test]` | Test additions or updates | `[test] Add integration tests for mlb-sync` |
+| `[style]` | CSS/styling changes | `[style] Update Cubs color palette` |
+| `[perf]` | Performance improvements | `[perf] Optimize table rendering` |
+| `[infra]` | Infrastructure/CI-CD changes | `[infra] Update GitHub Actions workflow` |
+| `[chore]` | Maintenance tasks, dependencies | `[chore] Update Node.js to 20` |
+
+### PR Description Guidelines
+
+- **One-liner title** following the naming convention
+- **Problem statement**: What issue does this solve?
+- **Solution approach**: How was it solved?
+- **Testing**: Manual/automated tests performed
+- **Screenshots/demos**: Visual changes should include before/after
+- **Breaking changes**: Flag any breaking changes clearly
+
+### Commit Message Standards
+
+- Use the same prefix: `[type] description`
+- Keep commits atomic (one logical change per commit)
+- Reference PR or issue if applicable: `[fix] Correct calculation (#42)`
+
+Example commit history:
+```
+[feat] Add event filtering
+[test] Add filter tests
+[docs] Update API docs
+```
+
 ## Key Patterns
 
 - **API Structure**: Each function folder contains `function.json` and `index.js`
