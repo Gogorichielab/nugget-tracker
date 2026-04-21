@@ -11,6 +11,17 @@ let events = [];
   document.getElementById("password-input").addEventListener("keydown", (e) => {
     if (e.key === "Enter") adminLogin();
   });
+  document.getElementById("unlock-btn").addEventListener("click", adminLogin);
+  document.getElementById("save-btn").addEventListener("click", submitForm);
+  document.getElementById("cancel-btn").addEventListener("click", cancelEdit);
+
+  document.getElementById("admin-tbody").addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-action]");
+    if (!btn) return;
+    const id = btn.dataset.id;
+    if (btn.dataset.action === "edit") editEvent(id);
+    else if (btn.dataset.action === "delete") deleteEvent(id);
+  });
 })();
 
 async function adminLogin() {
@@ -44,8 +55,8 @@ async function adminLogin() {
 }
 
 async function attemptLoad() {
-  document.getElementById("password-gate").style.display = "none";
-  document.getElementById("admin-panel").style.display = "block";
+  document.getElementById("password-gate").classList.add("hidden");
+  document.getElementById("admin-panel").classList.remove("hidden");
   await loadEvents();
 }
 
@@ -98,7 +109,7 @@ function editEvent(id) {
   document.getElementById("field-pitcher").value  = ev.pitcher;
   document.getElementById("field-inning").value   = ev.inning;
   document.getElementById("form-heading").textContent = "Edit Event";
-  document.getElementById("cancel-btn").style.display = "inline-flex";
+  document.getElementById("cancel-btn").classList.remove("hidden");
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -108,7 +119,7 @@ function cancelEdit() {
   document.getElementById("field-pitcher").value = "";
   document.getElementById("field-inning").value  = "";
   document.getElementById("form-heading").textContent = "Add Event";
-  document.getElementById("cancel-btn").style.display = "none";
+  document.getElementById("cancel-btn").classList.add("hidden");
 }
 
 async function deleteEvent(id) {
@@ -143,9 +154,9 @@ function renderAdminTable() {
       <td>${formatDate(e.redemptionDate)}</td>
       <td>${escHtml(e.pitcher)}</td>
       <td>${ordinal(e.inning)}</td>
-      <td style="display:flex;gap:0.5rem">
-        <button class="btn btn-warning" onclick="editEvent('${e.id}')">Edit</button>
-        <button class="btn btn-danger"  onclick="deleteEvent('${e.id}')">Delete</button>
+      <td class="actions-cell">
+        <button class="btn btn-warning" data-action="edit" data-id="${escHtml(e.id)}">Edit</button>
+        <button class="btn btn-danger" data-action="delete" data-id="${escHtml(e.id)}">Delete</button>
       </td>
     </tr>`).join("");
 }

@@ -31,13 +31,13 @@
     <div class="password-card">
       <h2>Admin Login</h2>
       <input type="password" id="password-input" placeholder="Enter password" autofocus />
-      <button class="btn btn-primary" style="width:100%" onclick="adminLogin()">Unlock</button>
-      <p id="pw-error" style="color:var(--cubs-red);font-size:0.82rem;margin-top:0.75rem"></p>
+      <button class="btn btn-primary btn-full" id="unlock-btn">Unlock</button>
+      <p id="pw-error" class="pw-error"></p>
     </div>
   </div>
 
   <!-- Admin panel (hidden until authenticated) -->
-  <div id="admin-panel" style="display:none">
+  <div id="admin-panel" class="hidden">
 
     <div class="section-heading" id="form-heading">Add Event</div>
 
@@ -58,9 +58,8 @@
         </div>
       </div>
       <div class="form-actions">
-        <button class="btn btn-primary" onclick="submitForm()">Save Event</button>
-        <button class="btn" style="background:var(--gray-200)" id="cancel-btn"
-                onclick="cancelEdit()" style="display:none">Cancel</button>
+        <button class="btn btn-primary" id="save-btn">Save Event</button>
+        <button class="btn btn-neutral hidden" id="cancel-btn">Cancel</button>
       </div>
     </div>
 
