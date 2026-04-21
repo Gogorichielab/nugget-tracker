@@ -1,6 +1,7 @@
 const { TableClient } = require("@azure/data-tables");
 const https = require("https");
 const { v4: uuidv4 } = require("uuid");
+const { getRedemptionDate } = require("../utils/redemptionDate");
 
 const CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
@@ -135,9 +136,7 @@ module.exports = async function (context, req) {
     const client = await getClient();
     const year = String(new Date(today).getFullYear());
 
-    const redemptionDate = new Date(today);
-    redemptionDate.setDate(redemptionDate.getDate() + 1);
-    const rd = redemptionDate.toISOString().split("T")[0];
+    const rd = getRedemptionDate(today);
 
     let insertedCount = 0;
     for (const [key] of qualifying) {

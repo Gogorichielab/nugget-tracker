@@ -1,5 +1,6 @@
 const { TableClient } = require("@azure/data-tables");
 const { v4: uuidv4 } = require("uuid");
+const { getRedemptionDate } = require("../utils/redemptionDate");
 
 const CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const TABLE_NAME = "NuggetEvents";
@@ -31,9 +32,7 @@ function isAdmin(req) {
 
 function eventToRow(body, partitionKey, rowKey) {
   const gameDate = body.gameDate;
-  const redemptionDate = new Date(gameDate);
-  redemptionDate.setDate(redemptionDate.getDate() + 1);
-  const rd = redemptionDate.toISOString().split("T")[0];
+  const rd = getRedemptionDate(gameDate);
   return {
     partitionKey,
     rowKey,
