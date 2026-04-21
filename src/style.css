@@ -487,6 +487,17 @@ tbody td {
 
 .password-card input:focus { outline: none; border-color: var(--cubs-blue); }
 
+/* ── CSP-safe utility classes (replace inline style="..." attributes) ── */
+.hidden { display: none !important; }
+.pw-error {
+  color: var(--cubs-red);
+  font-size: 0.82rem;
+  margin-top: 0.75rem;
+}
+.btn-full { width: 100%; }
+.btn-neutral { background: var(--gray-200); color: var(--text); }
+.actions-cell { display: flex; gap: 0.5rem; }
+
 /* ── Admin page compatibility (selectors used only by admin.html) ── */
 .header-logo { width: 60px; height: 60px; flex-shrink: 0; }
 .header-text h1 {
