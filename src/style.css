@@ -125,7 +125,6 @@ body {
 
 .stat-card.accent-red   { border-top-color: var(--cubs-red); }
 .stat-card.accent-gold  { border-top-color: var(--gold); }
-.stat-card.accent-cfa   { border-top-color: var(--cfa-red); }
 
 .stat-card .label {
   font-size: 0.72rem;

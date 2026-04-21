@@ -1,28 +1,11 @@
-const { TableClient } = require("@azure/data-tables");
 const { v4: uuidv4 } = require("uuid");
+const { setInternalError, getClient: _getClient } = require("../shared");
 
 const CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
-const TABLE_NAME = "NuggetEvents";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
-function setInternalError(context, error, message) {
-  const errorId = uuidv4();
-  context.log.error(`events error [${errorId}]`, error);
-  context.res = {
-    status: 500,
-    body: {
-      error: message,
-      errorId,
-    },
-  };
-}
-
-async function getClient() {
-  const client = TableClient.fromConnectionString(CONNECTION_STRING, TABLE_NAME);
-  try {
-    await client.createTable();
-  } catch (_) {}
-  return client;
+function getClient() {
+  return _getClient(CONNECTION_STRING);
 }
 
 function isAdmin(req) {

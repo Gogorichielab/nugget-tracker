@@ -1,23 +1,14 @@
-const { TableClient } = require("@azure/data-tables");
 const https = require("https");
 const { v4: uuidv4 } = require("uuid");
+const { setInternalError, getClient: _getClient } = require("../shared");
 
 const CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-const TABLE_NAME = "NuggetEvents";
 const CUBS_TEAM_ID = 112;
 const MLB_BASE = "https://statsapi.mlb.com";
 
-function setInternalError(context, error, message) {
-  const errorId = uuidv4();
-  context.log.error(`mlb-sync error [${errorId}]`, error);
-  context.res = {
-    status: 500,
-    body: {
-      error: message,
-      errorId,
-    },
-  };
+function getClient() {
+  return _getClient(CONNECTION_STRING);
 }
 
 function httpsGet(url) {
@@ -36,14 +27,6 @@ function httpsGet(url) {
       })
       .on("error", reject);
   });
-}
-
-async function getClient() {
-  const client = TableClient.fromConnectionString(CONNECTION_STRING, TABLE_NAME);
-  try {
-    await client.createTable();
-  } catch (_) {}
-  return client;
 }
 
 async function alreadyExists(client, gameDate, pitcher, inning) {
