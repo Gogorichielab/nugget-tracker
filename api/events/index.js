@@ -32,7 +32,8 @@ function isAdmin(req) {
 function eventToRow(body, partitionKey, rowKey) {
   const gameDate = body.gameDate;
   const redemptionDate = new Date(gameDate);
-  redemptionDate.setDate(redemptionDate.getDate() + 1);
+  const daysToAdd = redemptionDate.getUTCDay() === 6 ? 2 : 1; // Saturday -> Monday
+  redemptionDate.setDate(redemptionDate.getDate() + daysToAdd);
   const rd = redemptionDate.toISOString().split("T")[0];
   return {
     partitionKey,

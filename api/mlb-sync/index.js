@@ -136,7 +136,8 @@ module.exports = async function (context, req) {
     const year = String(new Date(today).getFullYear());
 
     const redemptionDate = new Date(today);
-    redemptionDate.setDate(redemptionDate.getDate() + 1);
+    const daysToAdd = redemptionDate.getUTCDay() === 6 ? 2 : 1; // Saturday -> Monday
+    redemptionDate.setDate(redemptionDate.getDate() + daysToAdd);
     const rd = redemptionDate.toISOString().split("T")[0];
 
     let insertedCount = 0;
