@@ -8,6 +8,7 @@
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     events = await res.json();
   } catch (e) {
+    renderHeader([]);
     renderBanner([]);
     renderTable([]);
     renderStats([]);
@@ -15,10 +16,17 @@
     return;
   }
 
+  renderHeader(events);
   renderBanner(events);
   renderStats(events);
   renderTable(events);
 })();
+
+function renderHeader(events) {
+  document.getElementById("season-tag").textContent = `${new Date().getFullYear()} Season`;
+  document.getElementById("header-event-count").textContent = events.length;
+  document.getElementById("section-event-count").textContent = events.length;
+}
 
 function renderBanner(events) {
   const banner   = document.getElementById("hero-banner");
@@ -49,24 +57,24 @@ function renderStats(events) {
 
   if (events.length === 0) {
     pitcherNameEl.textContent = "None yet";
+    pitcherCountEl.textContent = "No qualifying events";
     daysEl.textContent = "—";
+    lastDateEl.textContent = "";
     return;
   }
 
-  // Top pitcher
   const counts = {};
   for (const e of events) counts[e.pitcher] = (counts[e.pitcher] ?? 0) + 1;
   const topPitcher = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-  pitcherNameEl.textContent = topPitcher[0].split(" ").pop(); // last name
-  pitcherCountEl.textContent = `${topPitcher[1]} qualifying inning${topPitcher[1] > 1 ? "s" : ""}`;
+  pitcherNameEl.textContent = topPitcher[0].split(" ").pop();
+  pitcherCountEl.textContent = `${topPitcher[1]} event${topPitcher[1] > 1 ? "s" : ""} — leading the team`;
 
-  // Days since last event
   const sorted = [...events].sort((a, b) => b.gameDate.localeCompare(a.gameDate));
   const lastDate = sorted[0].gameDate;
   const today = new Date().toISOString().split("T")[0];
   const diff = Math.floor((new Date(today) - new Date(lastDate)) / 86400000);
   daysEl.textContent = diff === 0 ? "Today!" : diff;
-  lastDateEl.textContent = `Last event: ${formatDate(lastDate)}`;
+  lastDateEl.textContent = `Last game: ${formatDate(lastDate)}`;
 }
 
 function renderTable(events) {
@@ -77,18 +85,21 @@ function renderTable(events) {
     return;
   }
 
+  const today = new Date().toISOString().split("T")[0];
   const sorted = [...events].sort((a, b) => b.gameDate.localeCompare(a.gameDate));
+
   tbody.innerHTML = sorted.map((e) => {
-    const isToday = e.redemptionDate === new Date().toISOString().split("T")[0];
-    const redemptionCell = isToday
-      ? `<span class="redemption-badge">FREE TODAY!</span>`
-      : formatDate(e.redemptionDate);
+    const isToday = e.redemptionDate === today;
+    const nuggetChip = isToday
+      ? `<span class="chip nugget-chip is-today">🍗 FREE TODAY!</span>`
+      : `<span class="chip nugget-chip">🍗 ${formatDate(e.redemptionDate)}</span>`;
+    const inningChip = `<span class="chip inning-chip">⚾ ${ordinal(e.inning)}</span>`;
     return `
       <tr>
-        <td>${formatDate(e.gameDate)}</td>
-        <td>${redemptionCell}</td>
+        <td class="cell-date">${formatDate(e.gameDate)}</td>
         <td>${escHtml(e.pitcher)}</td>
-        <td>${ordinal(e.inning)}</td>
+        <td>${inningChip}</td>
+        <td>${nuggetChip}</td>
       </tr>`;
   }).join("");
 }
