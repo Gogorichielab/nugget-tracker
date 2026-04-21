@@ -34,6 +34,44 @@ body {
   height: 6px;
 }
 
+/* ── Hero banner ── */
+.hero-banner {
+  width: 100%;
+  padding: 1.5rem;
+  text-align: center;
+  border-bottom: 4px solid var(--cubs-red);
+}
+
+.hero-banner-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.hero-banner-headline {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3rem;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.hero-banner-sub {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  margin-top: 0.4rem;
+  opacity: 0.9;
+}
+
+.hero-banner.is-nugget-day {
+  background: var(--gold);
+  color: var(--cubs-blue);
+}
+
+.hero-banner.is-not-nugget-day {
+  background: var(--gray-100);
+  color: var(--gray-700);
+}
+
 .header-inner {
   max-width: 1100px;
   margin: 0 auto;
@@ -330,4 +368,6 @@ tbody td {
 @media (max-width: 600px) {
   .header-text h1 { font-size: 1.6rem; }
   .stat-card .value { font-size: 2rem; }
+  .hero-banner-headline { font-size: 2rem; }
+  .hero-banner-sub { font-size: 0.88rem; }
 }
