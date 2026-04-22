@@ -1,6 +1,10 @@
 const { TableClient } = require("@azure/data-tables");
 const { v4: uuidv4 } = require("uuid");
 const { getRedemptionDate } = require("../utils/redemptionDate");
+const { createRateLimiter, getClientIp } = require("../utils/rateLimiter");
+
+const readLimiter  = createRateLimiter(60, 60_000);   // 60 req / 1 min
+const writeLimiter = createRateLimiter(20, 900_000);  // 20 req / 15 min
 
 const CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const TABLE_NAME = "NuggetEvents";
@@ -58,6 +62,19 @@ module.exports = async function (context, req) {
   try {
     const method = req.method.toUpperCase();
     const id = context.bindingData.id;
+
+    const isWrite = method === "POST" || method === "PUT" || method === "DELETE";
+    const { allowed, retryAfter } = isWrite
+      ? writeLimiter.check(getClientIp(req))
+      : readLimiter.check(getClientIp(req));
+    if (!allowed) {
+      context.res = {
+        status: 429,
+        headers: { "Retry-After": String(retryAfter) },
+        body: { error: "Too many requests", retryAfter },
+      };
+      return;
+    }
 
     if (!CONNECTION_STRING) {
       context.res = { status: 500, body: { error: "Storage not configured" } };

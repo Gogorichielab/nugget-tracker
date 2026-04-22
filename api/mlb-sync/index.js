@@ -2,6 +2,9 @@ const { TableClient } = require("@azure/data-tables");
 const https = require("https");
 const { v4: uuidv4 } = require("uuid");
 const { getRedemptionDate } = require("../utils/redemptionDate");
+const { createRateLimiter, getClientIp } = require("../utils/rateLimiter");
+
+const syncLimiter = createRateLimiter(5, 900_000);    // 5 req / 15 min
 
 const CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
@@ -60,6 +63,16 @@ async function alreadyExists(client, gameDate, pitcher, inning) {
 
 module.exports = async function (context, req) {
   try {
+    const { allowed, retryAfter } = syncLimiter.check(getClientIp(req));
+    if (!allowed) {
+      context.res = {
+        status: 429,
+        headers: { "Retry-After": String(retryAfter) },
+        body: { error: "Too many requests", retryAfter },
+      };
+      return;
+    }
+
     const providedPassword = req.headers["x-admin-password"];
     if (!ADMIN_PASSWORD || providedPassword !== ADMIN_PASSWORD) {
       context.res = {
