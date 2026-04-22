@@ -2,6 +2,7 @@ const { TableClient } = require("@azure/data-tables");
 const { v4: uuidv4 } = require("uuid");
 const { getRedemptionDate } = require("../utils/redemptionDate");
 const { createRateLimiter, getClientIp } = require("../utils/rateLimiter");
+const { escapeOData } = require("../utils/odata");
 
 const readLimiter  = createRateLimiter(60, 60_000);   // 60 req / 1 min
 const writeLimiter = createRateLimiter(20, 900_000);  // 20 req / 15 min
@@ -118,7 +119,7 @@ module.exports = async function (context, req) {
     }
 
     if (method === "DELETE" && id) {
-      const iter = client.listEntities({ queryOptions: { filter: `RowKey eq '${id}'` } });
+      const iter = client.listEntities({ queryOptions: { filter: `RowKey eq '${escapeOData(id)}'` } });
       let found = null;
       for await (const entity of iter) {
         found = entity;
