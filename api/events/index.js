@@ -2,6 +2,8 @@ const { TableClient } = require("@azure/data-tables");
 const { v4: uuidv4 } = require("uuid");
 const { getRedemptionDate } = require("../utils/redemptionDate");
 const { createRateLimiter, getClientIp } = require("../utils/rateLimiter");
+const { escapeOData } = require("../utils/odataEscape");
+const { isValidUUID } = require("../utils/validation");
 
 const readLimiter  = createRateLimiter(60, 60_000);   // 60 req / 1 min
 const writeLimiter = createRateLimiter(20, 900_000);  // 20 req / 15 min
@@ -86,7 +88,7 @@ module.exports = async function (context, req) {
     if (method === "GET") {
       const year = String(new Date().getFullYear());
       const events = [];
-      const iter = client.listEntities({ queryOptions: { filter: `PartitionKey eq '${year}'` } });
+      const iter = client.listEntities({ queryOptions: { filter: `PartitionKey eq '${escapeOData(year)}'` } });
       for await (const entity of iter) {
         events.push(rowToEvent(entity));
       }
@@ -110,6 +112,10 @@ module.exports = async function (context, req) {
     }
 
     if (method === "PUT" && id) {
+      if (!isValidUUID(id)) {
+        context.res = { status: 400, body: { error: "Invalid ID format" } };
+        return;
+      }
       const year = String(new Date(req.body.gameDate).getFullYear());
       const entity = eventToRow(req.body, year, id);
       await client.upsertEntity(entity, "Replace");
@@ -118,7 +124,11 @@ module.exports = async function (context, req) {
     }
 
     if (method === "DELETE" && id) {
-      const iter = client.listEntities({ queryOptions: { filter: `RowKey eq '${id}'` } });
+      if (!isValidUUID(id)) {
+        context.res = { status: 400, body: { error: "Invalid ID format" } };
+        return;
+      }
+      const iter = client.listEntities({ queryOptions: { filter: `RowKey eq '${escapeOData(id)}'` } });
       let found = null;
       for await (const entity of iter) {
         found = entity;

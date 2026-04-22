@@ -3,6 +3,8 @@ const https = require("https");
 const { v4: uuidv4 } = require("uuid");
 const { getRedemptionDate } = require("../utils/redemptionDate");
 const { createRateLimiter, getClientIp } = require("../utils/rateLimiter");
+const { escapeOData } = require("../utils/odataEscape");
+const { isValidISODate, isValidPitcherName, isValidInning } = require("../utils/validation");
 
 const syncLimiter = createRateLimiter(5, 900_000);    // 5 req / 15 min
 
@@ -54,7 +56,7 @@ async function alreadyExists(client, gameDate, pitcher, inning) {
   const year = String(new Date(gameDate).getFullYear());
   const iter = client.listEntities({
     queryOptions: {
-      filter: `PartitionKey eq '${year}' and GameDate eq '${gameDate}' and Pitcher eq '${pitcher}' and Inning eq ${inning}`,
+      filter: `PartitionKey eq '${escapeOData(year)}' and GameDate eq '${escapeOData(gameDate)}' and Pitcher eq '${escapeOData(pitcher)}' and Inning eq ${parseInt(inning, 10)}`,
     },
   });
   for await (const _ of iter) return true;
@@ -155,6 +157,16 @@ module.exports = async function (context, req) {
     for (const [key] of qualifying) {
       const [inningStr, pitcher] = key.split(/:(.+)/);
       const inning = parseInt(inningStr, 10);
+
+      // Validate external data from MLB API to prevent injection
+      if (!isValidPitcherName(pitcher)) {
+        context.log.warn(`Invalid pitcher name from MLB API: ${pitcher}`);
+        continue;
+      }
+      if (!isValidInning(inning)) {
+        context.log.warn(`Invalid inning number from MLB API: ${inning}`);
+        continue;
+      }
 
       if (await alreadyExists(client, today, pitcher, inning)) {
         context.log(`Already recorded: ${pitcher} inning ${inning}`);
