@@ -2,7 +2,6 @@ name: Maintenance
 
 on:
   schedule:
-    - cron: '0 4 * * *'    # Daily 04:00 UTC — branch cleanup + stale check
     - cron: '28 8 * * 2'   # Weekly Tuesday 08:28 UTC — kept for stale alignment
   workflow_dispatch:
 
