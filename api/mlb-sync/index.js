@@ -3,6 +3,7 @@ const https = require("https");
 const { v4: uuidv4 } = require("uuid");
 const { getRedemptionDate } = require("../utils/redemptionDate");
 const { createRateLimiter, getClientIp } = require("../utils/rateLimiter");
+const { escapeODataString } = require("../utils/odata");
 
 const syncLimiter = createRateLimiter(5, 900_000);    // 5 req / 15 min
 
@@ -52,9 +53,12 @@ async function getClient() {
 
 async function alreadyExists(client, gameDate, pitcher, inning) {
   const year = String(new Date(gameDate).getFullYear());
+  const escapedYear = escapeODataString(year);
+  const escapedGameDate = escapeODataString(gameDate);
+  const escapedPitcher = escapeODataString(pitcher);
   const iter = client.listEntities({
     queryOptions: {
-      filter: `PartitionKey eq '${year}' and GameDate eq '${gameDate}' and Pitcher eq '${pitcher}' and Inning eq ${inning}`,
+      filter: `PartitionKey eq '${escapedYear}' and GameDate eq '${escapedGameDate}' and Pitcher eq '${escapedPitcher}' and Inning eq ${inning}`,
     },
   });
   for await (const _ of iter) return true;
