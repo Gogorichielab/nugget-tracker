@@ -87,7 +87,9 @@ module.exports = async function (context, req) {
     if (method === "GET") {
       const year = String(new Date().getFullYear());
       const events = [];
-      const iter = client.listEntities({ queryOptions: { filter: `PartitionKey eq '${year}'` } });
+      const iter = client.listEntities({
+        queryOptions: { filter: `PartitionKey eq '${escapeOData(year)}'` },
+      });
       for await (const entity of iter) {
         events.push(rowToEvent(entity));
       }
