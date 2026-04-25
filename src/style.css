@@ -352,13 +352,159 @@ tbody td {
   gap: 1rem;
 }
 
+.footer-link,
 .footer-admin-link {
   color: var(--cubs-blue);
   text-decoration: none;
   font-weight: 600;
 }
 
+.footer-link:hover,
 .footer-admin-link:hover { text-decoration: underline; }
+
+/* ── Privacy policy ── */
+.privacy-hero {
+  background: var(--cubs-blue);
+  color: var(--white);
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+}
+
+.privacy-hero h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.8rem;
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
+
+.privacy-hero p {
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
+  opacity: 0.75;
+}
+
+.privacy-content {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 5rem;
+}
+
+.privacy-card {
+  background: var(--white);
+  border-radius: 10px;
+  padding: 2rem 2.25rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  margin-bottom: 1.5rem;
+  border-left: 5px solid var(--cubs-blue);
+}
+
+.privacy-card.accent-red  { border-left-color: var(--cubs-red); }
+.privacy-card.accent-gold { border-left-color: var(--gold); }
+.privacy-card.accent-cfa  { border-left-color: var(--cfa-red); }
+
+.privacy-card h3 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.35rem;
+  letter-spacing: 0.05em;
+  color: var(--cubs-blue);
+  margin-bottom: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.privacy-card h3 .icon { font-size: 1.1rem; }
+
+.privacy-card p,
+.privacy-card li {
+  font-size: 0.93rem;
+  line-height: 1.7;
+  color: var(--gray-700);
+}
+
+.privacy-card ul {
+  padding-left: 1.25rem;
+  margin-top: 0.5rem;
+}
+
+.privacy-card li { margin-bottom: 0.35rem; }
+
+.privacy-card a {
+  color: var(--cubs-blue);
+  text-decoration: underline;
+}
+
+.privacy-card a:hover { color: var(--cubs-red); }
+
+.privacy-note { margin-top: 0.75rem; }
+
+.effective-date {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--gray-700);
+  margin-bottom: 2rem;
+  font-style: italic;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--cubs-blue);
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  margin-bottom: 1.75rem;
+}
+
+.back-link:hover { color: var(--cubs-red); }
+
+.tl-dr {
+  background: var(--cream);
+  border: 2px solid var(--gold);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.tl-dr strong {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.05em;
+  color: var(--cubs-blue);
+  display: block;
+  margin-bottom: 0.4rem;
+}
+
+.tl-dr p {
+  font-size: 0.92rem;
+  color: var(--gray-700);
+  line-height: 1.65;
+}
+
+.contact-box {
+  background: var(--cubs-blue);
+  color: var(--white);
+  border-radius: 10px;
+  padding: 1.5rem 1.75rem;
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.contact-box p {
+  font-size: 0.9rem;
+  opacity: 0.88;
+  line-height: 1.65;
+}
+
+.contact-box a { color: var(--gold); }
+
+.privacy-disclaimer {
+  margin-top: 2rem;
+  font-size: 0.78rem;
+  color: var(--gray-700);
+  text-align: center;
+}
 
 /* ── Buttons ── */
 .btn {
@@ -525,4 +671,6 @@ tbody td {
   .hero-banner-headline { font-size: 2rem; }
   .hero-banner-sub { font-size: 0.88rem; }
   .header-text h1 { font-size: 1.6rem; }
+  .privacy-card { padding: 1.25rem; }
+  .privacy-hero h2 { font-size: 2rem; }
 }
