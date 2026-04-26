@@ -32,4 +32,34 @@ Built with:
 
 For local setup and deployment instructions, see [agent.md](agent.md).
 
+## Security
+
+### OData Query Injection Protection
+
+All values interpolated into Azure Table Storage OData filter strings are
+escaped before use. The helper `api/utils/odata.js` exposes `escapeOData`,
+which doubles every single quote in a string value (`'` → `''`) as required
+by the OData specification. This prevents a crafted value — such as a pitcher
+name containing `'` or a malicious route parameter — from breaking out of the
+surrounding quotes and altering the query predicate.
+
+```js
+// api/utils/odata.js
+function escapeOData(value) {
+  return String(value).replace(/'/g, "''");
+}
+```
+
+The helper is applied in:
+
+| File | Filter field(s) |
+|------|----------------|
+| `api/events/index.js` | `id` (URL route parameter) used in `RowKey` filter |
+| `api/mlb-sync/index.js` | `pitcher`, `gameDate`, `year` from MLB Stats API response; `inning` is coerced with `parseInt` |
+
+> **Why this matters:** Without escaping, a pitcher name like `O'Brien` would
+> produce a syntactically invalid OData expression. A deliberately crafted
+> value such as `' or '1' eq '1` could match all rows, bypassing the
+> deduplication guard in `mlb-sync` and allowing duplicate events to be
+> inserted.
 
