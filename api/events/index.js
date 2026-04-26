@@ -31,8 +31,20 @@ async function getClient() {
   return client;
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function isAdmin(req) {
   return req.headers["x-admin-password"] === ADMIN_PASSWORD;
+}
+
+function validateEvent(body) {
+  if (!body) return "Request body is required";
+  const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+  if (!body.gameDate || !dateRe.test(body.gameDate)) return "Invalid gameDate";
+  if (!body.pitcher || typeof body.pitcher !== "string" || body.pitcher.trim().length === 0 || body.pitcher.length > 100) return "Invalid pitcher";
+  const inn = parseInt(body.inning, 10);
+  if (!Number.isInteger(inn) || inn < 1 || inn > 20) return "Invalid inning";
+  return null;
 }
 
 function eventToRow(body, partitionKey, rowKey) {
@@ -104,6 +116,11 @@ module.exports = async function (context, req) {
     }
 
     if (method === "POST") {
+      const validationError = validateEvent(req.body);
+      if (validationError) {
+        context.res = { status: 400, body: { error: validationError } };
+        return;
+      }
       const year = String(new Date(req.body.gameDate).getFullYear());
       const rowKey = uuidv4();
       const entity = eventToRow(req.body, year, rowKey);
@@ -113,6 +130,15 @@ module.exports = async function (context, req) {
     }
 
     if (method === "PUT" && id) {
+      if (!UUID_RE.test(id)) {
+        context.res = { status: 400, body: { error: "Invalid id" } };
+        return;
+      }
+      const validationError = validateEvent(req.body);
+      if (validationError) {
+        context.res = { status: 400, body: { error: validationError } };
+        return;
+      }
       const year = String(new Date(req.body.gameDate).getFullYear());
       const entity = eventToRow(req.body, year, id);
       await client.upsertEntity(entity, "Replace");
@@ -121,6 +147,10 @@ module.exports = async function (context, req) {
     }
 
     if (method === "DELETE" && id) {
+      if (!UUID_RE.test(id)) {
+        context.res = { status: 400, body: { error: "Invalid id" } };
+        return;
+      }
       const iter = client.listEntities({ queryOptions: { filter: `RowKey eq '${escapeOData(id)}'` } });
       let found = null;
       for await (const entity of iter) {

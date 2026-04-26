@@ -5,8 +5,28 @@ document.getElementById("footer-year").textContent = new Date().getFullYear();
 let adminPassword = sessionStorage.getItem("admin_pw") || "";
 let events = [];
 
+function isSessionValid() {
+  const t = parseInt(sessionStorage.getItem("admin_login_time") || "0", 10);
+  return Date.now() - t < 60 * 60 * 1000;
+}
+
+function adminLogout() {
+  adminPassword = "";
+  sessionStorage.removeItem("admin_pw");
+  sessionStorage.removeItem("admin_login_time");
+  document.getElementById("admin-panel").classList.add("hidden");
+  document.getElementById("password-gate").classList.remove("hidden");
+  document.getElementById("password-input").value = "";
+}
+
 (function init() {
-  if (adminPassword) attemptLoad();
+  if (adminPassword && isSessionValid()) {
+    attemptLoad();
+  } else {
+    adminPassword = "";
+    sessionStorage.removeItem("admin_pw");
+    sessionStorage.removeItem("admin_login_time");
+  }
 
   document.getElementById("password-input").addEventListener("keydown", (e) => {
     if (e.key === "Enter") adminLogin();
@@ -51,6 +71,7 @@ async function adminLogin() {
 
   adminPassword = pw;
   sessionStorage.setItem("admin_pw", pw);
+  sessionStorage.setItem("admin_login_time", String(Date.now()));
   attemptLoad();
 }
 
@@ -92,7 +113,7 @@ async function submitForm() {
 
   const res = await fetch(url, { method, headers: authHeaders(), body });
 
-  if (res.status === 401) { showToast("Session expired — reload and log in again", true); return; }
+  if (res.status === 401) { adminLogout(); return; }
   if (!res.ok) { showToast("Save failed", true); return; }
 
   showToast(id ? "Event updated" : "Event added");
@@ -130,7 +151,7 @@ async function deleteEvent(id) {
     headers: { "x-admin-password": adminPassword },
   });
 
-  if (res.status === 401) { showToast("Session expired", true); return; }
+  if (res.status === 401) { adminLogout(); return; }
   if (!res.ok && res.status !== 204) { showToast("Delete failed", true); return; }
 
   showToast("Event deleted");
