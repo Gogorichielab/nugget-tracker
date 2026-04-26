@@ -2,13 +2,8 @@ document.getElementById("footer-year").textContent = new Date().getFullYear();
 
 // ── Auth ──────────────────────────────────────────────────────────────────
 
-let adminPassword = sessionStorage.getItem("admin_pw") || "";
+let adminPassword = "";
 let events = [];
-
-function isSessionValid() {
-  const t = parseInt(sessionStorage.getItem("admin_login_time") || "0", 10);
-  return Date.now() - t < 60 * 60 * 1000;
-}
 
 function adminLogout() {
   adminPassword = "";
@@ -20,14 +15,6 @@ function adminLogout() {
 }
 
 (function init() {
-  if (adminPassword && isSessionValid()) {
-    attemptLoad();
-  } else {
-    adminPassword = "";
-    sessionStorage.removeItem("admin_pw");
-    sessionStorage.removeItem("admin_login_time");
-  }
-
   document.getElementById("password-input").addEventListener("keydown", (e) => {
     if (e.key === "Enter") adminLogin();
   });
@@ -70,8 +57,6 @@ async function adminLogin() {
   }
 
   adminPassword = pw;
-  sessionStorage.setItem("admin_pw", pw);
-  sessionStorage.setItem("admin_login_time", String(Date.now()));
   attemptLoad();
 }
 
