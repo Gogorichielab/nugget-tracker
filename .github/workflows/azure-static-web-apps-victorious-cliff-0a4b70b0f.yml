@@ -19,6 +19,15 @@ jobs:
         with:
           submodules: true
           lfs: false
+      - name: Inject Cloudflare Analytics token
+        env:
+          CF_BEACON_TOKEN: ${{ secrets.CLOUDFLAREKEY }}
+        run: |
+          if [ -z "${CF_BEACON_TOKEN}" ]; then
+            echo "CLOUDFLAREKEY secret is not set; analytics beacon will be disabled."
+          fi
+          find src -type f -name '*.html' -print0 \
+            | xargs -0 sed -i "s|__CF_BEACON_TOKEN__|${CF_BEACON_TOKEN}|g"
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
