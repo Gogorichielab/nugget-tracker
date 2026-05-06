@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Azure Functions API for Cubs Nuggets Tracker",
   "scripts": {
+    "test": "node --test",
     "start": "func start"
   },
   "dependencies": {
