@@ -20,7 +20,7 @@ function passwordPolicyError(password) {
 }
 
 function hashPassword(password) {
-  return crypto.createHash("sha256").update(password, "utf8").digest();
+  return crypto.scryptSync(password, ADMIN_TOKEN_SECRET, 32);
 }
 
 const ADMIN_PASSWORD_POLICY_ERROR = passwordPolicyError(ADMIN_PASSWORD);

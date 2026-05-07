@@ -39,7 +39,7 @@ For local setup and deployment instructions, see [agent.md](agent.md).
 Admin writes now use a dedicated auth flow:
 
 - `POST /api/auth` accepts `{ "password": "..." }`
-- The server validates the password via SHA-256 hash comparison
+- The server validates the password with a derived hash (`crypto.scryptSync`)
 - On success, the API returns a short-lived HMAC-signed bearer token (1 hour)
 - Admin write endpoints (`POST/PUT/DELETE /api/events`) require `Authorization: Bearer <token>`
 
