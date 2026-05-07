@@ -1,50 +1,159 @@
+const { TableClient } = require("@azure/data-tables");
+
+const DEFAULT_TABLE_NAME = "RateLimits";
+const MAX_CONFLICT_RETRIES = 3;
+const TABLE_KEY_DISALLOWED = /[\\/#?\u0000-\u001f\u007f-\u009f]/g;
+
 /**
- * Sliding-window in-memory rate limiter.
+ * Azure Table Storage-backed sliding-window rate limiter.
  *
- * Each limiter instance tracks request timestamps per IP using a Map.
- * Requests older than windowMs are pruned on every check; a background
- * interval evicts entirely idle IPs to prevent unbounded memory growth.
+ * Each limiter stores request timestamps in Azure Table Storage using optimistic
+ * concurrency (ETags), so limits survive Azure Functions cold starts and are
+ * shared by every Function App instance. Configure the table with
+ * RATE_LIMIT_TABLE_NAME, or default to RateLimits. The storage connection uses
+ * AZURE_STORAGE_CONNECTION_STRING, matching the rest of the API.
  *
  * Usage:
- *   const limiter = createRateLimiter(60, 60_000);
- *   const { allowed, retryAfter } = limiter.check(getClientIp(req));
+ *   const limiter = createRateLimiter(60, 60_000, { name: "events-read" });
+ *   const { allowed, retryAfter } = await limiter.check(getClientIp(req));
  *   if (!allowed) { ... return 429 ... }
  */
+function createRateLimiter(limit, windowMs, options = {}) {
+  if (!Number.isInteger(limit) || limit <= 0) {
+    throw new Error("Rate limiter limit must be a positive integer");
+  }
+  if (!Number.isInteger(windowMs) || windowMs <= 0) {
+    throw new Error("Rate limiter windowMs must be a positive integer");
+  }
 
-function createRateLimiter(limit, windowMs, cleanupIntervalMs = 300_000) {
-  const store = new Map();
-
-  setInterval(() => {
-    const now = Date.now();
-    for (const [ip, timestamps] of store) {
-      const fresh = timestamps.filter((t) => now - t < windowMs);
-      if (fresh.length === 0) store.delete(ip);
-      else store.set(ip, fresh);
+  const tableName = options.tableName || process.env.RATE_LIMIT_TABLE_NAME || DEFAULT_TABLE_NAME;
+  const connectionString = options.connectionString || process.env.AZURE_STORAGE_CONNECTION_STRING;
+  const partitionKey = sanitizeTableKey(options.name || `${limit}-${windowMs}`);
+  const now = options.now || Date.now;
+  const clientFactory = options.clientFactory || (() => {
+    if (!connectionString) {
+      throw new Error("AZURE_STORAGE_CONNECTION_STRING is required for rate limiting");
     }
-  }, cleanupIntervalMs);
+    return TableClient.fromConnectionString(connectionString, tableName);
+  });
 
-  function check(ip) {
-    const now = Date.now();
-    const timestamps = store.get(ip) ?? [];
-    const windowStart = now - windowMs;
+  let clientPromise;
 
-    // Prune expired entries from the front (timestamps are insertion-ordered / ascending)
-    let i = 0;
-    while (i < timestamps.length && timestamps[i] <= windowStart) i++;
-    const active = i > 0 ? timestamps.slice(i) : timestamps;
+  async function getClient() {
+    if (!clientPromise) {
+      clientPromise = Promise.resolve()
+        .then(clientFactory)
+        .then(async (client) => {
+          try {
+            await client.createTable();
+          } catch (error) {
+            if (!isStatus(error, 409)) throw error;
+          }
+          return client;
+        });
+    }
+    return clientPromise;
+  }
 
-    if (active.length >= limit) {
-      const retryAfter = Math.ceil((active[0] + windowMs - now) / 1000);
-      store.set(ip, active);
-      return { allowed: false, retryAfter: Math.max(retryAfter, 1) };
+  async function check(ip) {
+    const client = await getClient();
+    const rowKey = encodeRowKey(ip || "unknown");
+
+    for (let attempt = 0; attempt <= MAX_CONFLICT_RETRIES; attempt++) {
+      const checkedAt = now();
+      const windowStart = checkedAt - windowMs;
+      const existing = await getExistingEntity(client, partitionKey, rowKey);
+      const timestamps = existing ? parseTimestamps(existing.Timestamps) : [];
+      const active = timestamps.filter((timestamp) => timestamp > windowStart);
+
+      if (active.length >= limit) {
+        const retryAfter = Math.ceil((active[0] + windowMs - checkedAt) / 1000);
+        if (active.length !== timestamps.length && existing) {
+          await tryUpdateEntity(client, existing, active);
+        }
+        return { allowed: false, retryAfter: Math.max(retryAfter, 1) };
+      }
+
+      active.push(checkedAt);
+      const saved = existing
+        ? await tryUpdateEntity(client, existing, active)
+        : await tryCreateEntity(client, partitionKey, rowKey, active);
+
+      if (saved) return { allowed: true, retryAfter: 0 };
     }
 
-    active.push(now);
-    store.set(ip, active);
-    return { allowed: true, retryAfter: 0 };
+    return { allowed: false, retryAfter: Math.max(Math.ceil(windowMs / 1000), 1) };
   }
 
   return { check };
+}
+
+async function getExistingEntity(client, partitionKey, rowKey) {
+  try {
+    return await client.getEntity(partitionKey, rowKey);
+  } catch (error) {
+    if (isStatus(error, 404)) return null;
+    throw error;
+  }
+}
+
+async function tryCreateEntity(client, partitionKey, rowKey, timestamps) {
+  try {
+    await client.createEntity({
+      partitionKey,
+      rowKey,
+      Timestamps: JSON.stringify(timestamps),
+      UpdatedAt: new Date().toISOString(),
+    });
+    return true;
+  } catch (error) {
+    if (isStatus(error, 409)) return false;
+    throw error;
+  }
+}
+
+async function tryUpdateEntity(client, existing, timestamps) {
+  try {
+    await client.updateEntity(
+      {
+        partitionKey: existing.partitionKey,
+        rowKey: existing.rowKey,
+        Timestamps: JSON.stringify(timestamps),
+        UpdatedAt: new Date().toISOString(),
+      },
+      "Replace",
+      { etag: existing.etag }
+    );
+    return true;
+  } catch (error) {
+    if (isStatus(error, 404) || isStatus(error, 412)) return false;
+    throw error;
+  }
+}
+
+function parseTimestamps(value) {
+  if (typeof value !== "string") return [];
+
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((timestamp) => Number.isFinite(timestamp));
+  } catch (_) {
+    return [];
+  }
+}
+
+function sanitizeTableKey(value) {
+  const key = String(value).trim().replace(TABLE_KEY_DISALLOWED, "-");
+  return key || "default";
+}
+
+function encodeRowKey(value) {
+  return Buffer.from(String(value)).toString("base64url");
+}
+
+function isStatus(error, statusCode) {
+  return error && (error.statusCode === statusCode || error.status === statusCode);
 }
 
 /**
