@@ -49,12 +49,27 @@ function createRateLimiter(limit, windowMs, cleanupIntervalMs = 300_000) {
 
 /**
  * Extract the real client IP from an Azure Functions request.
- * x-forwarded-for may be a comma-separated list (client, proxy1, proxy2…);
- * the first value is always the originating client.
+ * This app is deployed behind the trusted Azure Static Web Apps / Azure
+ * Front Door edge, which appends the client socket IP to any existing
+ * x-forwarded-for value. Because clients can spoof leftmost XFF entries
+ * before the request reaches Azure, trust the rightmost non-empty XFF entry
+ * added by the edge, then fall back to trusted platform-provided headers.
  */
 function getClientIp(req) {
-  const xff = req.headers["x-forwarded-for"];
-  if (xff) return xff.split(",")[0].trim();
+  const headers = req.headers ?? {};
+  const xff = headers["x-forwarded-for"];
+  const xffEntries = typeof xff === "string"
+    ? xff.split(",").map((entry) => entry.trim()).filter(Boolean)
+    : [];
+
+  if (xffEntries.length > 0) return xffEntries[xffEntries.length - 1];
+
+  const azureClientIp = headers["x-azure-clientip"];
+  if (typeof azureClientIp === "string" && azureClientIp.trim()) return azureClientIp.trim();
+
+  const realIp = headers["x-real-ip"];
+  if (typeof realIp === "string" && realIp.trim()) return realIp.trim();
+
   return "unknown";
 }
 
