@@ -1,4 +1,5 @@
 const { TableClient } = require("@azure/data-tables");
+const crypto = require("crypto");
 const { v4: uuidv4 } = require("uuid");
 const { getRedemptionDate } = require("../utils/redemptionDate");
 const { createRateLimiter, getClientIp } = require("../utils/rateLimiter");
@@ -66,6 +67,20 @@ function rowToEvent(entity) {
   };
 }
 
+function getClientIpHash(req) {
+  return crypto.createHash("sha256").update(getClientIp(req)).digest("hex").slice(0, 12);
+}
+
+function logAudit(context, req, action, details) {
+  context.log(`[AUDIT] ${JSON.stringify({
+    timestamp: new Date().toISOString(),
+    action,
+    resource: "event",
+    ipHash: getClientIpHash(req),
+    ...details,
+  })}`);
+}
+
 module.exports = async function (context, req) {
   try {
     const method = req.method.toUpperCase();
@@ -126,6 +141,13 @@ module.exports = async function (context, req) {
       const rowKey = uuidv4();
       const entity = eventToRow(req.body, year, rowKey);
       await client.createEntity(entity);
+      logAudit(context, req, "CREATE", {
+        rowKey,
+        partitionKey: entity.partitionKey,
+        gameDate: entity.GameDate,
+        pitcher: entity.Pitcher,
+        inning: entity.Inning,
+      });
       context.res = { status: 201, body: rowToEvent(entity) };
       return;
     }
@@ -143,6 +165,13 @@ module.exports = async function (context, req) {
       const year = String(new Date(req.body.gameDate).getFullYear());
       const entity = eventToRow(req.body, year, id);
       await client.upsertEntity(entity, "Replace");
+      logAudit(context, req, "UPDATE", {
+        rowKey: id,
+        partitionKey: entity.partitionKey,
+        gameDate: entity.GameDate,
+        pitcher: entity.Pitcher,
+        inning: entity.Inning,
+      });
       context.res = { status: 200, body: rowToEvent(entity) };
       return;
     }
@@ -163,6 +192,10 @@ module.exports = async function (context, req) {
         return;
       }
       await client.deleteEntity(found.partitionKey, id);
+      logAudit(context, req, "DELETE", {
+        rowKey: id,
+        partitionKey: found.partitionKey,
+      });
       context.res = { status: 204 };
       return;
     }
