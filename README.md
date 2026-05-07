@@ -50,6 +50,7 @@ the legacy header for scheduled-job backward compatibility.)
 Required environment variables:
 
 - `ADMIN_PASSWORD` (must be at least 12 chars with upper/lower/number/symbol)
+- `ADMIN_PASSWORD_SALT` (must be at least 16 chars)
 - `ADMIN_TOKEN_SECRET` (must be at least 32 chars)
 
 ![Admin login screen](docs/admin-login.png)

@@ -3,11 +3,13 @@ const assert = require("node:assert/strict");
 
 const ORIGINAL_ENV = {
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
+  ADMIN_PASSWORD_SALT: process.env.ADMIN_PASSWORD_SALT,
   ADMIN_TOKEN_SECRET: process.env.ADMIN_TOKEN_SECRET,
 };
 
-function loadAdminAuth({ adminPassword, adminTokenSecret }) {
+function loadAdminAuth({ adminPassword, adminPasswordSalt, adminTokenSecret }) {
   process.env.ADMIN_PASSWORD = adminPassword;
+  process.env.ADMIN_PASSWORD_SALT = adminPasswordSalt;
   process.env.ADMIN_TOKEN_SECRET = adminTokenSecret;
   const modulePath = require.resolve("./adminAuth");
   delete require.cache[modulePath];
@@ -16,6 +18,7 @@ function loadAdminAuth({ adminPassword, adminTokenSecret }) {
 
 test.after(() => {
   process.env.ADMIN_PASSWORD = ORIGINAL_ENV.ADMIN_PASSWORD;
+  process.env.ADMIN_PASSWORD_SALT = ORIGINAL_ENV.ADMIN_PASSWORD_SALT;
   process.env.ADMIN_TOKEN_SECRET = ORIGINAL_ENV.ADMIN_TOKEN_SECRET;
   delete require.cache[require.resolve("./adminAuth")];
 });
@@ -23,6 +26,7 @@ test.after(() => {
 test("verifyAdminPassword validates using hash-based comparison", () => {
   const auth = loadAdminAuth({
     adminPassword: "StrongAdmin!234",
+    adminPasswordSalt: "unique-password-salt",
     adminTokenSecret: "this-is-a-very-long-admin-token-secret-12345",
   });
 
@@ -33,6 +37,7 @@ test("verifyAdminPassword validates using hash-based comparison", () => {
 test("createAdminToken and verifyAdminBearerToken accept valid bearer token", () => {
   const auth = loadAdminAuth({
     adminPassword: "StrongAdmin!234",
+    adminPasswordSalt: "unique-password-salt",
     adminTokenSecret: "this-is-a-very-long-admin-token-secret-12345",
   });
   const token = auth.createAdminToken();
@@ -46,6 +51,7 @@ test("createAdminToken and verifyAdminBearerToken accept valid bearer token", ()
 test("verifyAdminBearerToken rejects malformed bearer token", () => {
   const auth = loadAdminAuth({
     adminPassword: "StrongAdmin!234",
+    adminPasswordSalt: "unique-password-salt",
     adminTokenSecret: "this-is-a-very-long-admin-token-secret-12345",
   });
 
@@ -58,6 +64,7 @@ test("verifyAdminBearerToken rejects malformed bearer token", () => {
 test("verifyLegacyPasswordHeader supports hashed password validation", () => {
   const auth = loadAdminAuth({
     adminPassword: "StrongAdmin!234",
+    adminPasswordSalt: "unique-password-salt",
     adminTokenSecret: "this-is-a-very-long-admin-token-secret-12345",
   });
 
@@ -70,8 +77,19 @@ test("verifyLegacyPasswordHeader supports hashed password validation", () => {
 test("getAuthConfigError fails for weak admin password policy", () => {
   const auth = loadAdminAuth({
     adminPassword: "short",
+    adminPasswordSalt: "unique-password-salt",
     adminTokenSecret: "this-is-a-very-long-admin-token-secret-12345",
   });
 
   assert.match(auth.getAuthConfigError(), /ADMIN_PASSWORD must be at least/);
+});
+
+test("getAuthConfigError fails for missing password salt", () => {
+  const auth = loadAdminAuth({
+    adminPassword: "StrongAdmin!234",
+    adminPasswordSalt: "",
+    adminTokenSecret: "this-is-a-very-long-admin-token-secret-12345",
+  });
+
+  assert.match(auth.getAuthConfigError(), /ADMIN_PASSWORD_SALT must be at least/);
 });

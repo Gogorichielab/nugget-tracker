@@ -2,8 +2,7 @@ const crypto = require("crypto");
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
 const ADMIN_TOKEN_SECRET = process.env.ADMIN_TOKEN_SECRET || "";
-const ADMIN_PASSWORD_SALT =
-  process.env.ADMIN_PASSWORD_SALT || "nugget-tracker-admin-password-salt-v1";
+const ADMIN_PASSWORD_SALT = process.env.ADMIN_PASSWORD_SALT || "";
 const MIN_PASSWORD_LENGTH = 12;
 const TOKEN_TTL_SECONDS = 60 * 60;
 
@@ -61,6 +60,13 @@ function getTokenSecretError() {
   return null;
 }
 
+function getPasswordSaltError() {
+  if (ADMIN_PASSWORD_SALT.length < 16) {
+    return "ADMIN_PASSWORD_SALT must be at least 16 characters";
+  }
+  return null;
+}
+
 function base64UrlEncode(input) {
   return Buffer.from(input).toString("base64url");
 }
@@ -84,7 +90,6 @@ function createAdminToken() {
     sub: "admin",
     iat: nowSeconds,
     exp: nowSeconds + TOKEN_TTL_SECONDS,
-    nonce: crypto.randomBytes(16).toString("base64url"),
   };
   const encodedPayload = base64UrlEncode(JSON.stringify(payload));
   const signature = signPayload(encodedPayload);
@@ -123,7 +128,7 @@ function verifyAdminBearerToken(req) {
 }
 
 function getAuthConfigError() {
-  return ADMIN_PASSWORD_POLICY_ERROR || getTokenSecretError();
+  return ADMIN_PASSWORD_POLICY_ERROR || getPasswordSaltError() || getTokenSecretError();
 }
 
 module.exports = {
