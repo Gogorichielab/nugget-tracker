@@ -3,14 +3,13 @@ const { v4: uuidv4 } = require("uuid");
 const { getRedemptionDate } = require("../utils/redemptionDate");
 const { createRateLimiter, getClientIp } = require("../utils/rateLimiter");
 const { escapeOData } = require("../utils/odata");
+const { getAuthConfigError, verifyAdminBearerToken } = require("../utils/adminAuth");
 
 const readLimiter  = createRateLimiter(60, 60_000);   // 60 req / 1 min
 const writeLimiter = createRateLimiter(20, 900_000);  // 20 req / 15 min
 
 const CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const TABLE_NAME = "NuggetEvents";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-
 function setInternalError(context, error, message) {
   const errorId = uuidv4();
   context.log.error(`events error [${errorId}]`, error);
@@ -32,10 +31,6 @@ async function getClient() {
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function isAdmin(req) {
-  return req.headers["x-admin-password"] === ADMIN_PASSWORD;
-}
 
 function validateEvent(body) {
   if (!body) return "Request body is required";
@@ -110,7 +105,13 @@ module.exports = async function (context, req) {
       return;
     }
 
-    if (!isAdmin(req)) {
+    const authConfigError = getAuthConfigError();
+    if (authConfigError) {
+      context.res = { status: 500, body: { error: "Admin authentication misconfigured" } };
+      return;
+    }
+
+    if (!verifyAdminBearerToken(req)) {
       context.res = { status: 401, body: { error: "Unauthorized" } };
       return;
     }

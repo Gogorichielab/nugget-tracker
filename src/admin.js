@@ -2,12 +2,12 @@ document.getElementById("footer-year").textContent = new Date().getFullYear();
 
 // ── Auth ──────────────────────────────────────────────────────────────────
 
-let adminPassword = "";
+let adminToken = "";
 let events = [];
 
 function adminLogout() {
-  adminPassword = "";
-  sessionStorage.removeItem("admin_pw");
+  adminToken = "";
+  sessionStorage.removeItem("admin_token");
   sessionStorage.removeItem("admin_login_time");
   document.getElementById("admin-panel").classList.add("hidden");
   document.getElementById("password-gate").classList.remove("hidden");
@@ -35,11 +35,10 @@ async function adminLogin() {
   const pw = document.getElementById("password-input").value.trim();
   if (!pw) return;
 
-  // Probe a write-protected endpoint with this password
-  const res = await fetch("/api/events", {
+  const res = await fetch("/api/auth", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-admin-password": pw },
-    body: JSON.stringify({ gameDate: "1900-01-01", pitcher: "__probe__", inning: 0 }),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password: pw }),
   });
 
   if (res.status === 401) {
@@ -47,17 +46,18 @@ async function adminLogin() {
     return;
   }
 
-  // Accepted — delete the probe event if it was created
-  if (res.status === 201) {
-    const created = await res.json();
-    await fetch(`/api/events/${created.id}`, {
-      method: "DELETE",
-      headers: { "x-admin-password": pw },
-    });
+  if (!res.ok) {
+    document.getElementById("pw-error").textContent = "Login failed. Try again.";
+    return;
   }
 
-  adminPassword = pw;
-  attemptLoad();
+  const auth = await res.json();
+  adminToken = auth.token;
+  sessionStorage.setItem("admin_token", adminToken);
+  sessionStorage.setItem("admin_login_time", String(Date.now()));
+  document.getElementById("pw-error").textContent = "";
+  document.getElementById("password-input").value = "";
+  await attemptLoad();
 }
 
 async function attemptLoad() {
@@ -69,7 +69,10 @@ async function attemptLoad() {
 // ── API helpers ───────────────────────────────────────────────────────────
 
 function authHeaders() {
-  return { "Content-Type": "application/json", "x-admin-password": adminPassword };
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${adminToken}`,
+  };
 }
 
 async function loadEvents() {
@@ -133,7 +136,7 @@ async function deleteEvent(id) {
 
   const res = await fetch(`/api/events/${id}`, {
     method: "DELETE",
-    headers: { "x-admin-password": adminPassword },
+    headers: authHeaders(),
   });
 
   if (res.status === 401) { adminLogout(); return; }

@@ -4,11 +4,15 @@ const { v4: uuidv4 } = require("uuid");
 const { getRedemptionDate } = require("../utils/redemptionDate");
 const { createRateLimiter, getClientIp } = require("../utils/rateLimiter");
 const { escapeOData } = require("../utils/odata");
+const {
+  getAuthConfigError,
+  verifyAdminBearerToken,
+  verifyLegacyPasswordHeader,
+} = require("../utils/adminAuth");
 
 const syncLimiter = createRateLimiter(5, 900_000);    // 5 req / 15 min
 
 const CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const TABLE_NAME = "NuggetEvents";
 const CUBS_TEAM_ID = 112;
 const MLB_BASE = "https://statsapi.mlb.com";
@@ -124,8 +128,16 @@ module.exports = async function (context, req) {
       return;
     }
 
-    const providedPassword = req.headers["x-admin-password"];
-    if (!ADMIN_PASSWORD || providedPassword !== ADMIN_PASSWORD) {
+    const authConfigError = getAuthConfigError();
+    if (authConfigError) {
+      context.res = {
+        status: 500,
+        body: { error: "Admin authentication misconfigured" },
+      };
+      return;
+    }
+
+    if (!verifyAdminBearerToken(req) && !verifyLegacyPasswordHeader(req)) {
       context.res = {
         status: 401,
         body: { error: "Unauthorized" },

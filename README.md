@@ -34,6 +34,25 @@ For local setup and deployment instructions, see [agent.md](agent.md).
 
 ## Security
 
+### Admin Authentication Hardening
+
+Admin writes now use a dedicated auth flow:
+
+- `POST /api/auth` accepts `{ "password": "..." }`
+- The server validates the password via SHA-256 hash comparison
+- On success, the API returns a short-lived HMAC-signed bearer token (1 hour)
+- Admin write endpoints (`POST/PUT/DELETE /api/events`) require `Authorization: Bearer <token>`
+
+The legacy `x-admin-password` header is no longer used by the admin UI and the
+probe-and-delete login pattern has been removed.
+
+Required environment variables:
+
+- `ADMIN_PASSWORD` (must be at least 12 chars with upper/lower/number/symbol)
+- `ADMIN_TOKEN_SECRET` (must be at least 32 chars)
+
+![Admin login screen](docs/admin-login.png)
+
 ### OData Query Injection Protection
 
 All values interpolated into Azure Table Storage OData filter strings are
@@ -62,4 +81,3 @@ The helper is applied in:
 > value such as `' or '1' eq '1` could match all rows, bypassing the
 > deduplication guard in `mlb-sync` and allowing duplicate events to be
 > inserted.
-
