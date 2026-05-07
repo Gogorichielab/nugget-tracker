@@ -2,6 +2,8 @@ const crypto = require("crypto");
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
 const ADMIN_TOKEN_SECRET = process.env.ADMIN_TOKEN_SECRET || "";
+const ADMIN_PASSWORD_SALT =
+  process.env.ADMIN_PASSWORD_SALT || "nugget-tracker-admin-password-salt-v1";
 const MIN_PASSWORD_LENGTH = 12;
 const TOKEN_TTL_SECONDS = 60 * 60;
 
@@ -20,7 +22,7 @@ function passwordPolicyError(password) {
 }
 
 function hashPassword(password) {
-  return crypto.scryptSync(password, ADMIN_TOKEN_SECRET, 32);
+  return crypto.scryptSync(password, ADMIN_PASSWORD_SALT, 32);
 }
 
 const ADMIN_PASSWORD_POLICY_ERROR = passwordPolicyError(ADMIN_PASSWORD);
@@ -77,11 +79,11 @@ function signPayload(encodedPayload) {
 function createAdminToken() {
   const tokenSecretError = getTokenSecretError();
   if (tokenSecretError) throw new Error(tokenSecretError);
-  const now = Math.floor(Date.now() / 1000);
+  const nowSeconds = Math.floor(Date.now() / 1000);
   const payload = {
     sub: "admin",
-    iat: now,
-    exp: now + TOKEN_TTL_SECONDS,
+    iat: nowSeconds,
+    exp: nowSeconds + TOKEN_TTL_SECONDS,
     nonce: crypto.randomBytes(16).toString("base64url"),
   };
   const encodedPayload = base64UrlEncode(JSON.stringify(payload));

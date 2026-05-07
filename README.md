@@ -43,8 +43,9 @@ Admin writes now use a dedicated auth flow:
 - On success, the API returns a short-lived HMAC-signed bearer token (1 hour)
 - Admin write endpoints (`POST/PUT/DELETE /api/events`) require `Authorization: Bearer <token>`
 
-The legacy `x-admin-password` header is no longer used by the admin UI and the
-probe-and-delete login pattern has been removed.
+The admin UI no longer uses the legacy `x-admin-password` header and the
+probe-and-delete login pattern has been removed. (`/api/mlb-sync` still accepts
+the legacy header for scheduled-job backward compatibility.)
 
 Required environment variables:
 
