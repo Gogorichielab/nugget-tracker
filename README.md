@@ -38,14 +38,15 @@ For local setup and deployment instructions, see [agent.md](agent.md).
 
 Admin writes now use a dedicated auth flow:
 
-- `POST /api/auth` accepts `{ "password": "..." }`
+- `GET /api/admin/verify` accepts the password in the `x-admin-password` header and verifies it without touching event data
+- `POST /api/auth` accepts `{ "password": "..." }` after verification to mint an admin token
 - The server validates the password with a derived hash (`crypto.scryptSync`)
-- On success, the API returns a short-lived HMAC-signed bearer token (1 hour)
+- On auth success, the API returns a short-lived HMAC-signed bearer token (1 hour)
 - Admin write endpoints (`POST/PUT/DELETE /api/events`) require `Authorization: Bearer <token>`
 
-The admin UI no longer uses the legacy `x-admin-password` header and the
-probe-and-delete login pattern has been removed. (`/api/mlb-sync` still accepts
-the legacy header for scheduled-job backward compatibility.)
+The admin UI no longer uses event writes as a login probe, so failed validation
+cannot create synthetic events or accidentally unlock the UI. (`/api/mlb-sync`
+still accepts the legacy header for scheduled-job backward compatibility.)
 
 Required environment variables:
 

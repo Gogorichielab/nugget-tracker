@@ -35,6 +35,20 @@ async function adminLogin() {
   const pw = document.getElementById("password-input").value.trim();
   if (!pw) return;
 
+  const verifyRes = await fetch("/api/admin/verify", {
+    headers: { "x-admin-password": pw },
+  });
+
+  if (verifyRes.status === 401) {
+    document.getElementById("pw-error").textContent = "Incorrect password.";
+    return;
+  }
+
+  if (!verifyRes.ok) {
+    document.getElementById("pw-error").textContent = "Login failed. Try again.";
+    return;
+  }
+
   const res = await fetch("/api/auth", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
