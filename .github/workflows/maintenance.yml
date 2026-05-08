@@ -39,11 +39,11 @@ jobs:
           days-before-pr-close: 7
 
   # ────────────────────────────────────────────────────────────
-  # JOB 2 — Delete merged codex/ and copilot/ branches
+  # JOB 2 — Delete merged codex/, copilot/, and claude/ branches
   # Only deletes branches whose PR was merged >= 2 days ago.
   # ────────────────────────────────────────────────────────────
   cleanup-branches:
-    name: Delete Merged Codex & Copilot Branches
+    name: Delete Merged Codex, Copilot & Claude Branches
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -64,7 +64,7 @@ jobs:
           mapfile -t BRANCHES < <(
             gh api --paginate "repos/$REPO/branches?per_page=100" \
               --jq '.[].name' \
-              | grep -E '^(codex|copilot)/' || true
+              | grep -E '^(claude|codex|copilot)/' || true
           )
 
           if [ "${#BRANCHES[@]}" -eq 0 ]; then
@@ -97,5 +97,75 @@ jobs:
               fi
             else
               echo "  → Branch $BRANCH merged less than 2 days ago (skipping)."
+            fi
+          done
+
+  # ────────────────────────────────────────────────────────────
+  # JOB 3 — Delete any branch (except protected) with no commit
+  # activity in the last 7 days, regardless of PR state.
+  # ────────────────────────────────────────────────────────────
+  cleanup-stale-branches:
+    name: Delete Stale Branches (7 days no activity)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Delete branches with no activity for 7+ days
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          SEVEN_DAYS_SECONDS=$((7 * 24 * 60 * 60))
+          NOW_TS=$(date -u +%s)
+
+          # Get the default branch to always protect it
+          DEFAULT_BRANCH=$(gh api "repos/$REPO" --jq '.default_branch')
+
+          # Branches to never delete regardless of age
+          PROTECTED="^(${DEFAULT_BRANCH}|main|master|develop|development|staging|production|release)$"
+
+          echo "Scanning all branches in $REPO for stale activity..."
+
+          mapfile -t BRANCHES < <(
+            gh api --paginate "repos/$REPO/branches?per_page=100" \
+              --jq '.[].name' || true
+          )
+
+          if [ "${#BRANCHES[@]}" -eq 0 ]; then
+            echo "No branches found."
+            exit 0
+          fi
+
+          for BRANCH in "${BRANCHES[@]}"; do
+            # Skip protected branches
+            if echo "$BRANCH" | grep -qE "$PROTECTED"; then
+              echo "Skipping protected branch: $BRANCH"
+              continue
+            fi
+
+            LAST_COMMIT_DATE=$(gh api \
+              "repos/$REPO/commits?sha=$BRANCH&per_page=1" \
+              --jq '.[0].commit.committer.date // empty' \
+              || echo "")
+
+            if [ -z "$LAST_COMMIT_DATE" ]; then
+              echo "  → Could not determine last commit for $BRANCH (skipping)."
+              continue
+            fi
+
+            LAST_COMMIT_TS=$(date -d "$LAST_COMMIT_DATE" +%s)
+            AGE_SECONDS=$((NOW_TS - LAST_COMMIT_TS))
+
+            if [ "$AGE_SECONDS" -ge "$SEVEN_DAYS_SECONDS" ]; then
+              echo "  → Branch $BRANCH last commit $LAST_COMMIT_DATE (>= 7 days ago). Deleting..."
+              if gh api -X DELETE "repos/$REPO/git/refs/heads/$BRANCH" --silent; then
+                echo "  ✓ Successfully deleted $BRANCH"
+              else
+                echo "  ✗ Failed to delete $BRANCH"
+              fi
+            else
+              echo "  → Branch $BRANCH active within 7 days (skipping)."
             fi
           done
