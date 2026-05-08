@@ -14,7 +14,7 @@
 function createRateLimiter(limit, windowMs, cleanupIntervalMs = 300_000) {
   const store = new Map();
 
-  setInterval(() => {
+  const cleanupTimer = setInterval(() => {
     const now = Date.now();
     for (const [ip, timestamps] of store) {
       const fresh = timestamps.filter((t) => now - t < windowMs);
@@ -22,6 +22,7 @@ function createRateLimiter(limit, windowMs, cleanupIntervalMs = 300_000) {
       else store.set(ip, fresh);
     }
   }, cleanupIntervalMs);
+  cleanupTimer.unref?.();
 
   function check(ip) {
     const now = Date.now();
