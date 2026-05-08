@@ -30,7 +30,48 @@ function loadHandlerWithClient(client) {
   delete require.cache[require.resolve("../utils/adminAuth")];
   delete require.cache[require.resolve("./index")];
 
-  TableClient.fromConnectionString = () => client;
+  const limiterRows = new Map();
+  const limiterClient = {
+    async createTable() {},
+    async getEntity(partitionKey, rowKey) {
+      const key = `${partitionKey}|${rowKey}`;
+      const entity = limiterRows.get(key);
+      if (!entity) {
+        const error = new Error("not found");
+        error.statusCode = 404;
+        throw error;
+      }
+      return { ...entity };
+    },
+    async createEntity(entity) {
+      const key = `${entity.partitionKey}|${entity.rowKey}`;
+      if (limiterRows.has(key)) {
+        const error = new Error("conflict");
+        error.statusCode = 409;
+        throw error;
+      }
+      limiterRows.set(key, { ...entity, etag: "test-etag" });
+    },
+    async updateEntity(entity, _mode, options = {}) {
+      const key = `${entity.partitionKey}|${entity.rowKey}`;
+      const existing = limiterRows.get(key);
+      if (!existing) {
+        const error = new Error("not found");
+        error.statusCode = 404;
+        throw error;
+      }
+      if (options.etag && existing.etag !== options.etag) {
+        const error = new Error("precondition failed");
+        error.statusCode = 412;
+        throw error;
+      }
+      limiterRows.set(key, { ...entity, etag: "test-etag" });
+    },
+  };
+
+  TableClient.fromConnectionString = (_connectionString, tableName) => (
+    tableName === "RateLimits" ? limiterClient : client
+  );
 
   const handler = require("./index");
   const { createAdminToken } = require("../utils/adminAuth");

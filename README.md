@@ -53,6 +53,8 @@ Required environment variables:
 - `ADMIN_PASSWORD` (must be at least 12 chars with upper/lower/number/symbol)
 - `ADMIN_PASSWORD_SALT` (must be at least 16 chars)
 - `ADMIN_TOKEN_SECRET` (must be at least 32 chars)
+- `AZURE_STORAGE_CONNECTION_STRING` (used for event data and shared rate-limit state)
+- `RATE_LIMIT_TABLE_NAME` (optional; defaults to `RateLimits`)
 
 ![Admin login screen](docs/admin-login.png)
 
