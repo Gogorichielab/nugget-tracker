@@ -86,3 +86,23 @@ The helper is applied in:
 > value such as `' or '1' eq '1` could match all rows, bypassing the
 > deduplication guard in `mlb-sync` and allowing duplicate events to be
 > inserted.
+
+### Audit Logging for Admin Writes
+
+Successful admin-protected event writes now emit structured audit logs from
+`api/events/index.js` through `context.log` (ingested by Azure Application
+Insights when configured in `host.json`).
+
+Covered operations:
+
+- `POST /api/events` → `CREATE`
+- `PUT /api/events/{id}` → `UPDATE`
+- `DELETE /api/events/{id}` → `DELETE`
+
+Each audit entry includes:
+
+- ISO timestamp
+- action (`CREATE`, `UPDATE`, `DELETE`)
+- event identifiers (`rowKey`, `partitionKey`)
+- event context (`gameDate`, `pitcher`, `inning` when applicable)
+- hashed client IP (`ipHash`, first 12 chars of SHA-256)

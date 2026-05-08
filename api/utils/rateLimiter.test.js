@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const { getClientIp } = require("./rateLimiter");
+const { createRateLimiter, getClientIp } = require("./rateLimiter");
 
 function requestWithHeaders(headers = {}) {
   return { headers };
@@ -99,8 +99,6 @@ function createFakeTableClient() {
   };
 }
 
-const { createRateLimiter } = require("./rateLimiter");
-
 test("createRateLimiter persists counts in the table client", async () => {
   let currentTime = 1_000;
   const tableClient = createFakeTableClient();
@@ -138,4 +136,21 @@ test("createRateLimiter prunes expired timestamps before allowing another reques
 
   const [row] = [...tableClient.rows.values()];
   assert.deepEqual(JSON.parse(row.Timestamps), [11_001]);
+});
+
+test("createRateLimiter returns check and destroy methods", () => {
+  const limiter = createRateLimiter(5, 1000);
+
+  assert.equal(typeof limiter.check, "function");
+  assert.equal(typeof limiter.destroy, "function");
+
+  limiter.destroy();
+});
+
+test("createRateLimiter.destroy clears the interval without throwing", () => {
+  const limiter = createRateLimiter(5, 1000);
+
+  assert.doesNotThrow(() => {
+    limiter.destroy();
+  });
 });

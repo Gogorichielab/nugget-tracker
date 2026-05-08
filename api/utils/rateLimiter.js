@@ -13,10 +13,13 @@ const TABLE_KEY_DISALLOWED = /[\\/#?\u0000-\u001f\u007f-\u009f]/g;
  * RATE_LIMIT_TABLE_NAME, or default to RateLimits. The storage connection uses
  * AZURE_STORAGE_CONNECTION_STRING, matching the rest of the API.
  *
+ * destroy() is provided for compatibility with existing call sites and tests.
+ *
  * Usage:
  *   const limiter = createRateLimiter(60, 60_000, { name: "events-read" });
  *   const { allowed, retryAfter } = await limiter.check(getClientIp(req));
  *   if (!allowed) { ... return 429 ... }
+ *   // On shutdown: limiter.destroy();
  */
 function createRateLimiter(limit, windowMs, options = {}) {
   if (!Number.isInteger(limit) || limit <= 0) {
@@ -85,7 +88,11 @@ function createRateLimiter(limit, windowMs, options = {}) {
     return { allowed: false, retryAfter: Math.max(Math.ceil(windowMs / 1000), 1) };
   }
 
-  return { check };
+  function destroy() {
+    // no-op; kept for compatibility with existing call sites/tests
+  }
+
+  return { check, destroy };
 }
 
 async function getExistingEntity(client, partitionKey, rowKey) {
