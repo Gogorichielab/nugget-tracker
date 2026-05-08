@@ -9,6 +9,15 @@ const { getAuthConfigError, verifyAdminBearerToken } = require("../utils/adminAu
 const readLimiter  = createRateLimiter(60, 60_000, { name: "events-read" });   // 60 req / 1 min
 const writeLimiter = createRateLimiter(20, 900_000, { name: "events-write" });  // 20 req / 15 min
 
+async function checkRateLimit(limiter, ip, context) {
+  try {
+    return await limiter.check(ip);
+  } catch (err) {
+    context.log.error("Rate limiter error (fail-open):", err);
+    return { allowed: true, retryAfter: 0 };
+  }
+}
+
 const CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const TABLE_NAME = "NuggetEvents";
 function setInternalError(context, error, message) {
@@ -87,9 +96,11 @@ module.exports = async function (context, req) {
     const id = context.bindingData.id;
 
     const isWrite = method === "POST" || method === "PUT" || method === "DELETE";
-    const { allowed, retryAfter } = isWrite
-      ? await writeLimiter.check(getClientIp(req))
-      : await readLimiter.check(getClientIp(req));
+    const { allowed, retryAfter } = await checkRateLimit(
+      isWrite ? writeLimiter : readLimiter,
+      getClientIp(req),
+      context
+    );
     if (!allowed) {
       context.res = {
         status: 429,

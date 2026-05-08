@@ -44,7 +44,7 @@ function createRateLimiter(limit, windowMs, options = {}) {
 
   async function getClient() {
     if (!clientPromise) {
-      clientPromise = Promise.resolve()
+      const p = Promise.resolve()
         .then(clientFactory)
         .then(async (client) => {
           try {
@@ -54,6 +54,10 @@ function createRateLimiter(limit, windowMs, options = {}) {
           }
           return client;
         });
+      p.catch(() => {
+        if (clientPromise === p) clientPromise = null;
+      });
+      clientPromise = p;
     }
     return clientPromise;
   }

@@ -12,6 +12,15 @@ const {
 
 const syncLimiter = createRateLimiter(5, 900_000, { name: "mlb-sync" });    // 5 req / 15 min
 
+async function checkRateLimit(limiter, ip, context) {
+  try {
+    return await limiter.check(ip);
+  } catch (err) {
+    context.log.error("Rate limiter error (fail-open):", err);
+    return { allowed: true, retryAfter: 0 };
+  }
+}
+
 const CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const TABLE_NAME = "NuggetEvents";
 const CUBS_TEAM_ID = 112;
@@ -118,7 +127,7 @@ async function alreadyExists(client, gameDate, pitcher, inning) {
 
 module.exports = async function (context, req) {
   try {
-    const { allowed, retryAfter } = await syncLimiter.check(getClientIp(req));
+    const { allowed, retryAfter } = await checkRateLimit(syncLimiter, getClientIp(req), context);
     if (!allowed) {
       context.res = {
         status: 429,
