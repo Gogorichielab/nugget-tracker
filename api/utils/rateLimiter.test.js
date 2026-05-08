@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const { getClientIp } = require("./rateLimiter");
+const { createRateLimiter, getClientIp } = require("./rateLimiter");
 
 function requestWithHeaders(headers = {}) {
   return { headers };
@@ -55,4 +55,21 @@ test("getClientIp returns unknown when no usable headers are present", () => {
 
   assert.equal(blankHeaders, "unknown");
   assert.equal(missingHeaders, "unknown");
+});
+
+test("createRateLimiter returns check and destroy methods", () => {
+  const limiter = createRateLimiter(5, 1000);
+
+  assert.equal(typeof limiter.check, "function");
+  assert.equal(typeof limiter.destroy, "function");
+
+  limiter.destroy();
+});
+
+test("createRateLimiter.destroy clears the interval without throwing", () => {
+  const limiter = createRateLimiter(5, 1000);
+
+  assert.doesNotThrow(() => {
+    limiter.destroy();
+  });
 });

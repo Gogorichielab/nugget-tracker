@@ -5,16 +5,20 @@
  * Requests older than windowMs are pruned on every check; a background
  * interval evicts entirely idle IPs to prevent unbounded memory growth.
  *
+ * The cleanup interval uses timer.unref() so it won't block process exit.
+ * Call destroy() to clear the interval during testing or graceful shutdown.
+ *
  * Usage:
  *   const limiter = createRateLimiter(60, 60_000);
  *   const { allowed, retryAfter } = limiter.check(getClientIp(req));
  *   if (!allowed) { ... return 429 ... }
+ *   // On shutdown: limiter.destroy();
  */
 
 function createRateLimiter(limit, windowMs, cleanupIntervalMs = 300_000) {
   const store = new Map();
 
-  setInterval(() => {
+  const timer = setInterval(() => {
     const now = Date.now();
     for (const [ip, timestamps] of store) {
       const fresh = timestamps.filter((t) => now - t < windowMs);
@@ -22,6 +26,7 @@ function createRateLimiter(limit, windowMs, cleanupIntervalMs = 300_000) {
       else store.set(ip, fresh);
     }
   }, cleanupIntervalMs);
+  timer.unref();
 
   function check(ip) {
     const now = Date.now();
@@ -44,7 +49,11 @@ function createRateLimiter(limit, windowMs, cleanupIntervalMs = 300_000) {
     return { allowed: true, retryAfter: 0 };
   }
 
-  return { check };
+  function destroy() {
+    clearInterval(timer);
+  }
+
+  return { check, destroy };
 }
 
 /**
