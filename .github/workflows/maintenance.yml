@@ -39,11 +39,11 @@ jobs:
           days-before-pr-close: 7
 
   # ────────────────────────────────────────────────────────────
-  # JOB 2 — Delete merged codex/ and copilot/ branches
+  # JOB 2 — Delete merged codex/, copilot/, and claude/ branches
   # Only deletes branches whose PR was merged >= 2 days ago.
   # ────────────────────────────────────────────────────────────
   cleanup-branches:
-    name: Delete Merged Codex & Copilot Branches
+    name: Delete Merged Codex, Copilot & Claude Branches
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -64,7 +64,7 @@ jobs:
           mapfile -t BRANCHES < <(
             gh api --paginate "repos/$REPO/branches?per_page=100" \
               --jq '.[].name' \
-              | grep -E '^(codex|copilot)/' || true
+              | grep -E '^(claude|codex|copilot)/' || true
           )
 
           if [ "${#BRANCHES[@]}" -eq 0 ]; then
