@@ -48,76 +48,54 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Install jq
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq jq
-
       - name: Delete old merged branches
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
 
           OWNER="${REPO%/*}"
-          REPO_NAME="${REPO#*/}"
           TWO_DAYS_SECONDS=$((2 * 24 * 60 * 60))
           NOW_TS=$(date -u +%s)
 
-          echo "Scanning branches in $OWNER/$REPO_NAME ..."
+          echo "Scanning branches in $REPO ..."
 
-          page=1
-          while :; do
-            echo "Fetching branches page $page..."
-            RESPONSE=$(curl -sS \
-              -H "Authorization: Bearer $GITHUB_TOKEN" \
-              -H "Accept: application/vnd.github+json" \
-              "https://api.github.com/repos/$OWNER/$REPO_NAME/branches?per_page=100&page=$page")
+          mapfile -t BRANCHES < <(
+            gh api --paginate "repos/$REPO/branches?per_page=100" \
+              --jq '.[].name' \
+              | grep -E '^(codex|copilot)/' || true
+          )
 
-            COUNT=$(echo "$RESPONSE" | jq 'length')
-            if [ "$COUNT" -eq 0 ]; then
-              echo "No more branches to process."
-              break
+          if [ "${#BRANCHES[@]}" -eq 0 ]; then
+            echo "No codex/ or copilot/ branches found."
+            exit 0
+          fi
+
+          for BRANCH in "${BRANCHES[@]}"; do
+            echo "Processing branch: $BRANCH"
+
+            MERGED_AT=$(gh api \
+              "repos/$REPO/pulls?state=closed&head=$OWNER:$BRANCH&per_page=10" \
+              --jq '[.[] | select(.merged_at != null)][0].merged_at // empty' \
+              || echo "")
+
+            if [ -z "$MERGED_AT" ]; then
+              echo "  → No merged PR found for $BRANCH (skipping)."
+              continue
             fi
 
-            echo "$RESPONSE" | jq -r '.[].name' | while read -r BRANCH; do
-              if [[ "$BRANCH" == codex/* || "$BRANCH" == copilot/* ]]; then
-                echo "Processing branch: $BRANCH"
+            MERGED_TS=$(date -d "$MERGED_AT" +%s)
+            AGE_SECONDS=$((NOW_TS - MERGED_TS))
 
-                PRS=$(curl -sS \
-                  -H "Authorization: Bearer $GITHUB_TOKEN" \
-                  -H "Accept: application/vnd.github+json" \
-                  "https://api.github.com/repos/$OWNER/$REPO_NAME/pulls?state=closed&head=$OWNER:$BRANCH&per_page=10")
-
-                MERGED_AT=$(echo "$PRS" | jq -r \
-                  '[.[] | select(.merged_at != null)][0].merged_at // empty')
-
-                if [ -z "$MERGED_AT" ]; then
-                  echo "  → No merged PR found for $BRANCH (skipping)."
-                  continue
-                fi
-
-                MERGED_TS=$(date -d "$MERGED_AT" +%s)
-                AGE_SECONDS=$((NOW_TS - MERGED_TS))
-
-                if [ "$AGE_SECONDS" -ge "$TWO_DAYS_SECONDS" ]; then
-                  echo "  → Branch $BRANCH merged at $MERGED_AT (>= 2 days ago). Deleting..."
-
-                  DELETE_STATUS=$(curl -sS -o /dev/null -w "%{http_code}" \
-                    -X DELETE \
-                    -H "Authorization: Bearer $GITHUB_TOKEN" \
-                    -H "Accept: application/vnd.github+json" \
-                    "https://api.github.com/repos/$OWNER/$REPO_NAME/git/refs/heads/$BRANCH")
-
-                  if [ "$DELETE_STATUS" -eq 204 ]; then
-                    echo "  ✓ Successfully deleted $BRANCH"
-                  else
-                    echo "  ✗ Failed to delete $BRANCH (HTTP $DELETE_STATUS)"
-                  fi
-                else
-                  echo "  → Branch $BRANCH merged less than 2 days ago (skipping)."
-                fi
+            if [ "$AGE_SECONDS" -ge "$TWO_DAYS_SECONDS" ]; then
+              echo "  → Branch $BRANCH merged at $MERGED_AT (>= 2 days ago). Deleting..."
+              if gh api -X DELETE "repos/$REPO/git/refs/heads/$BRANCH" --silent; then
+                echo "  ✓ Successfully deleted $BRANCH"
+              else
+                echo "  ✗ Failed to delete $BRANCH"
               fi
-            done
-
-            page=$((page + 1))
+            else
+              echo "  → Branch $BRANCH merged less than 2 days ago (skipping)."
+            fi
           done
