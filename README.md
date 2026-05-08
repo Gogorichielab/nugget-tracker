@@ -1,10 +1,10 @@
-# 🟦 Nugget Tracker
+# Nugget Tracker
 
 [![Azure SWA CI/CD](https://github.com/Gogorichielab/nugget-tracker/actions/workflows/azure-static-web-apps-victorious-cliff-0a4b70b0f.yml/badge.svg)](https://github.com/Gogorichielab/nugget-tracker/actions/workflows/azure-static-web-apps-victorious-cliff-0a4b70b0f.yml) [![MLB Sync Nightly](https://github.com/Gogorichielab/nugget-tracker/actions/workflows/mlb-sync-nightly.yml/badge.svg)](https://github.com/Gogorichielab/nugget-tracker/actions/workflows/mlb-sync-nightly.yml) [![Maintenance](https://github.com/Gogorichielab/nugget-tracker/actions/workflows/maintenance.yml/badge.svg)](https://github.com/Gogorichielab/nugget-tracker/actions/workflows/maintenance.yml)
 
 Free Chick-fil-A nuggets. Every time a Cubs pitcher strikes out **3 batters in a single inning** at home.
 
-We're keeping score so you don't have to. 🍟
+We're keeping score so you don't have to. 
 
 ## How It Works
 
