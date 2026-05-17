@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-05-17
+
+### Improved
+
+**Admin login endpoints are now rate-limited.** The `/api/auth` token endpoint and the legacy `/api/admin/verify` password check now allow at most 5 requests per IP every 15 minutes, returning `429 Too Many Requests` with a `Retry-After` header once the limit is hit. This slows down password-guessing attacks without affecting normal sign-in.
+
+---
+
 ## 2026-04-21
 
 ### Fixed
