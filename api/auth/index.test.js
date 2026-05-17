@@ -82,7 +82,7 @@ test.after(() => {
   delete require.cache[require.resolve("./index")];
 });
 
-test("admin verify returns 200 for a valid password header without a body write", async () => {
+test("auth issues a bearer token for the correct password", async () => {
   const handler = loadHandler({
     adminPassword: "StrongAdmin!234",
     adminPasswordSalt: "unique-password-salt",
@@ -90,15 +90,18 @@ test("admin verify returns 200 for a valid password header without a body write"
   });
 
   const res = await invoke(handler, {
-    headers: { "x-admin-password": "StrongAdmin!234", "x-forwarded-for": "203.0.113.10" },
+    body: { password: "StrongAdmin!234" },
+    headers: { "x-forwarded-for": "203.0.113.20" },
   });
 
   assert.equal(res.status, 200);
-  assert.deepEqual(res.body, {});
-  assert.equal(res.headers["Cache-Control"], "no-store");
+  assert.equal(res.body.tokenType, "Bearer");
+  assert.equal(typeof res.body.token, "string");
+  assert.ok(res.body.token.length > 0);
+  assert.equal(typeof res.body.expiresIn, "number");
 });
 
-test("admin verify returns 401 for an invalid password header", async () => {
+test("auth returns 401 for an incorrect password", async () => {
   const handler = loadHandler({
     adminPassword: "StrongAdmin!234",
     adminPasswordSalt: "unique-password-salt",
@@ -106,15 +109,28 @@ test("admin verify returns 401 for an invalid password header", async () => {
   });
 
   const res = await invoke(handler, {
-    headers: { "x-admin-password": "wrong-password", "x-forwarded-for": "203.0.113.11" },
+    body: { password: "wrong" },
+    headers: { "x-forwarded-for": "203.0.113.21" },
   });
 
   assert.equal(res.status, 401);
   assert.deepEqual(res.body, { error: "Unauthorized" });
-  assert.equal(res.headers["Cache-Control"], "no-store");
 });
 
-test("admin verify returns 500 when authentication is misconfigured", async () => {
+test("auth returns 401 when the body is missing or malformed", async () => {
+  const handler = loadHandler({
+    adminPassword: "StrongAdmin!234",
+    adminPasswordSalt: "unique-password-salt",
+    adminTokenSecret: "this-is-a-very-long-admin-token-secret-12345",
+  });
+
+  const res = await invoke(handler, { headers: { "x-forwarded-for": "203.0.113.22" } });
+
+  assert.equal(res.status, 401);
+  assert.deepEqual(res.body, { error: "Unauthorized" });
+});
+
+test("auth returns 500 when authentication is misconfigured", async () => {
   const handler = loadHandler({
     adminPassword: "short",
     adminPasswordSalt: "unique-password-salt",
@@ -122,31 +138,30 @@ test("admin verify returns 500 when authentication is misconfigured", async () =
   });
 
   const res = await invoke(handler, {
-    headers: { "x-admin-password": "short", "x-forwarded-for": "203.0.113.12" },
+    body: { password: "short" },
+    headers: { "x-forwarded-for": "203.0.113.23" },
   });
 
   assert.equal(res.status, 500);
   assert.deepEqual(res.body, { error: "Admin authentication misconfigured" });
-  assert.equal(res.headers["Cache-Control"], "no-store");
 });
 
-test("admin verify returns 429 after exceeding the per-IP rate limit", async () => {
+test("auth returns 429 after exceeding the per-IP rate limit", async () => {
   const handler = loadHandler({
     adminPassword: "StrongAdmin!234",
     adminPasswordSalt: "unique-password-salt",
     adminTokenSecret: "this-is-a-very-long-admin-token-secret-12345",
   });
 
-  const headers = { "x-admin-password": "wrong", "x-forwarded-for": "203.0.113.99" };
+  const req = { body: { password: "wrong" }, headers: { "x-forwarded-for": "203.0.113.99" } };
   for (let i = 0; i < 5; i++) {
-    const res = await invoke(handler, { headers });
+    const res = await invoke(handler, req);
     assert.equal(res.status, 401);
   }
 
-  const res = await invoke(handler, { headers });
+  const res = await invoke(handler, req);
   assert.equal(res.status, 429);
   assert.equal(res.body.error, "Too many requests");
   assert.ok(typeof res.body.retryAfter === "number" && res.body.retryAfter >= 1);
-  assert.equal(res.headers["Cache-Control"], "no-store");
   assert.equal(res.headers["Retry-After"], String(res.body.retryAfter));
 });
