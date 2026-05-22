@@ -8,100 +8,75 @@
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     events = await res.json();
   } catch (e) {
-    renderHeader([]);
-    renderBanner([]);
-    renderTable([]);
     renderStats([]);
+    renderEvents([]);
     console.error("Failed to load events:", e);
     return;
   }
 
-  renderHeader(events);
-  renderBanner(events);
   renderStats(events);
-  renderTable(events);
+  renderEvents(events);
 })();
 
-function renderHeader(events) {
-  document.getElementById("season-tag").textContent = `${new Date().getFullYear()} Season`;
-  document.getElementById("header-event-count").textContent = events.length;
-  document.getElementById("section-event-count").textContent = events.length;
-}
-
-function renderBanner(events) {
-  const banner   = document.getElementById("hero-banner");
-  const headline = document.getElementById("hero-banner-headline");
-  const sub      = document.getElementById("hero-banner-sub");
-  const today    = new Date().toISOString().split("T")[0];
-  const isNuggetDay = events.some((e) => e.redemptionDate === today);
-
-  banner.classList.toggle("is-nugget-day", isNuggetDay);
-  banner.classList.toggle("is-not-nugget-day", !isNuggetDay);
-  headline.textContent = isNuggetDay
-    ? "🍗 FREE NUGGETS TODAY"
-    : "No nuggets today";
-  sub.textContent = isNuggetDay
-    ? "Redeemable until close"
-    : "Check back after the next home game.";
-  banner.hidden = false;
-}
-
 function renderStats(events) {
-  const totalEl       = document.getElementById("stat-total");
-  const pitcherNameEl = document.getElementById("stat-pitcher-name");
-  const pitcherCountEl= document.getElementById("stat-pitcher-count");
-  const daysEl        = document.getElementById("stat-days");
-  const lastDateEl    = document.getElementById("stat-last-date");
+  document.getElementById("stat-total").textContent = events.length || "0";
 
-  totalEl.textContent = events.length;
-
-  if (events.length === 0) {
-    pitcherNameEl.textContent = "None yet";
-    pitcherCountEl.textContent = "No qualifying events";
-    daysEl.textContent = "—";
-    lastDateEl.textContent = "";
+  if (!events.length) {
+    document.getElementById("stat-pitcher-name").textContent = "—";
+    document.getElementById("stat-pitcher-count").textContent = "";
+    document.getElementById("stat-days").textContent = "—";
+    document.getElementById("stat-last-date").textContent = "";
     return;
   }
 
   const counts = {};
   for (const e of events) counts[e.pitcher] = (counts[e.pitcher] ?? 0) + 1;
-  const topPitcher = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-  pitcherNameEl.textContent = topPitcher[0].split(" ").pop();
-  pitcherCountEl.textContent = `${topPitcher[1]} event${topPitcher[1] > 1 ? "s" : ""} — leading the team`;
+  const [topName, topCount] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  document.getElementById("stat-pitcher-name").textContent = topName.split(" ").pop();
+  document.getElementById("stat-pitcher-count").textContent = `${topCount} qualifying inning${topCount > 1 ? "s" : ""}`;
 
   const sorted = [...events].sort((a, b) => b.gameDate.localeCompare(a.gameDate));
   const lastDate = sorted[0].gameDate;
   const today = new Date().toISOString().split("T")[0];
   const diff = Math.floor((new Date(today) - new Date(lastDate)) / 86400000);
-  daysEl.textContent = diff === 0 ? "Today!" : diff;
-  lastDateEl.textContent = `Last game: ${formatDate(lastDate)}`;
+  document.getElementById("stat-days").textContent = diff === 0 ? "🔥" : diff;
+  document.getElementById("stat-last-date").textContent = `Last: ${formatDate(lastDate)}`;
 }
 
-function renderTable(events) {
-  const tbody = document.getElementById("events-tbody");
+function renderEvents(events) {
+  const list    = document.getElementById("events-list");
+  const loading = document.getElementById("loading-state");
+  if (loading) loading.remove();
 
-  if (events.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" class="empty-state">No qualifying events yet this season.</td></tr>`;
+  document.getElementById("event-count").textContent =
+    events.length ? `${events.length} event${events.length > 1 ? "s" : ""}` : "None yet";
+
+  if (!events.length) {
+    list.insertAdjacentHTML("beforeend",
+      `<div class="empty-state">No qualifying events yet this season — check back after a home game!</div>`);
     return;
   }
 
-  const today = new Date().toISOString().split("T")[0];
+  const today  = new Date().toISOString().split("T")[0];
   const sorted = [...events].sort((a, b) => b.gameDate.localeCompare(a.gameDate));
 
-  tbody.innerHTML = sorted.map((e) => {
+  sorted.forEach((e, i) => {
     const isToday = e.redemptionDate === today;
-    const nuggetChip = isToday
-      ? `<span class="chip nugget-chip is-today">🍗 FREE TODAY!</span>`
-      : `<span class="chip nugget-chip">🍗 ${formatDate(e.redemptionDate)}</span>`;
-    const inningChip = `<span class="chip inning-chip">⚾ ${ordinal(e.inning)}</span>`;
-    return `
-      <tr>
-        <td class="cell-date">${formatDate(e.gameDate)}</td>
-        <td>${escHtml(e.pitcher)}</td>
-        <td>${inningChip}</td>
-        <td>${nuggetChip}</td>
-      </tr>`;
-  }).join("");
+    const row = document.createElement("div");
+    row.className = "event-row";
+    row.style.animationDelay = `${0.04 * i}s`;
+    row.innerHTML = `
+      <div class="event-cell cell-date">${formatDate(e.gameDate)}</div>
+      <div class="event-cell cell-redemption">
+        ${isToday
+          ? `<span class="free-badge">🍟 Free Today!</span>`
+          : formatDate(e.redemptionDate)}
+      </div>
+      <div class="event-cell cell-pitcher">${escHtml(e.pitcher)}</div>
+      <div class="event-cell cell-inning">${ordinal(e.inning)}</div>
+    `;
+    list.appendChild(row);
+  });
 }
 
 function formatDate(iso) {
@@ -112,13 +87,11 @@ function formatDate(iso) {
 }
 
 function ordinal(n) {
-  const s = ["th","st","nd","rd"];
-  const v = n % 100;
+  const s = ["th","st","nd","rd"], v = n % 100;
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
 function escHtml(str) {
-  return str.replace(/[&<>"']/g, (c) =>
-    ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" })[c]
-  );
+  return String(str).replace(/[&<>"']/g,
+    (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[c]);
 }
