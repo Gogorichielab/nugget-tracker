@@ -8,98 +8,101 @@
 </head>
 <body>
 
-<div class="top-stripe" aria-hidden="true"></div>
-
+<div class="header-band-top"></div>
+<div class="header-band-gold"></div>
 <header class="site-header">
   <div class="header-inner">
-    <div class="header-left">
-      <div class="eyebrow">Chicago Cubs &times; Chick-fil-A</div>
-      <h1 class="header-title">FREE <span class="title-accent">NUGGETS</span> TRACKER</h1>
+    <div class="logo-mark">C</div>
+    <div class="header-copy">
+      <div class="header-eyebrow">Wrigley Field &middot; Chicago</div>
+      <h1 class="header-title">Free<br><span>Nugget</span><br>Tracker</h1>
+      <p class="header-sub">Every time a Cubs pitcher strikes out 3 batters in one inning at home, Chick-fil-A gives you free nuggets the next day.</p>
     </div>
-    <div class="header-right">
-      <div class="season-tag" id="season-tag">Season</div>
-      <div class="event-count-badge">
-        <span class="count-icon" aria-hidden="true">🍗</span>
-        <span class="count-text">
-          <span class="count-label">Events</span>
-          <span class="count-value"><span id="header-event-count">0</span> this season</span>
-        </span>
-      </div>
+    <div class="header-nav">
+      <a href="admin.html" class="header-action-link">Admin ↗</a>
     </div>
   </div>
 </header>
+<div class="header-band-bottom"></div>
 
-<section class="hero-banner" id="hero-banner" hidden>
-  <div class="hero-banner-inner">
-    <div class="hero-banner-headline" id="hero-banner-headline"></div>
-    <div class="hero-banner-sub" id="hero-banner-sub"></div>
-  </div>
-</section>
-
-<section class="rule-banner">
-  <div class="rule-banner-inner">
-    <span class="rule-icon" aria-hidden="true">⚾</span>
-    <p class="rule-text">
-      When a Cubs pitcher records <span class="rule-highlight">3 strikeouts in a single inning</span>
-      at a <span class="rule-highlight">home game</span>, Chick-fil-A gives out
-      <span class="rule-highlight">free nuggets</span> the next day.
-    </p>
-  </div>
-</section>
-
-<main class="main-content">
-
-  <div class="stats-grid">
-    <div class="stat-card accent-blue">
-      <div class="stat-icon" aria-hidden="true">🍗</div>
-      <div class="stat-label">Total Free Chick-fil-A</div>
-      <div class="stat-value" id="stat-total">—</div>
-      <div class="stat-sub">events this season</div>
+<!-- ── HERO STATS ── -->
+<div class="hero-banner">
+  <div class="hero-inner">
+    <div class="hero-stat">
+      <span class="big-num" id="stat-total">—</span>
+      <span class="stat-label">Events This Season</span>
+      <div class="stat-sub">3-K innings at Wrigley</div>
     </div>
-    <div class="stat-card accent-red">
-      <div class="stat-icon" aria-hidden="true">🏆</div>
-      <div class="stat-label">Top Nugget Pitcher</div>
-      <div class="stat-value stat-value-sm" id="stat-pitcher-name">—</div>
+    <div class="hero-divider"></div>
+    <div class="hero-stat">
+      <span class="big-num" id="stat-pitcher-name">—</span>
+      <span class="stat-label">Top Pitcher</span>
       <div class="stat-sub" id="stat-pitcher-count"></div>
     </div>
-    <div class="stat-card accent-gold">
-      <div class="stat-icon" aria-hidden="true">📅</div>
-      <div class="stat-label">Days Since Last</div>
-      <div class="stat-value" id="stat-days">—</div>
+    <div class="hero-divider"></div>
+    <div class="hero-stat">
+      <span class="big-num" id="stat-days">—</span>
+      <span class="stat-label">Days Since Last</span>
       <div class="stat-sub" id="stat-last-date"></div>
     </div>
   </div>
+</div>
 
-  <div class="section-header-row">
-    <h2 class="section-heading">Qualifying Events</h2>
-    <div class="section-count"><span id="section-event-count">0</span> events recorded</div>
+<!-- ── MAIN CONTENT ── -->
+<main class="main-content">
+
+  <div class="section-head">
+    <h2>Nugget Events</h2>
+    <div class="rule"></div>
+    <div class="count-pill" id="event-count">Loading</div>
   </div>
 
-  <div class="table-wrapper">
-    <table>
-      <thead>
-        <tr>
-          <th>Game Date</th>
-          <th>Pitcher</th>
-          <th>Inning</th>
-          <th>Nuggets</th>
-        </tr>
-      </thead>
-      <tbody id="events-tbody">
-        <tr><td colspan="4" class="empty-state">Loading…</td></tr>
-      </tbody>
-    </table>
+  <div class="events-list" id="events-list">
+    <div class="event-row header-row">
+      <div class="event-cell">Game Date</div>
+      <div class="event-cell">Free Nuggets On</div>
+      <div class="event-cell">Pitcher</div>
+      <div class="event-cell">Inning</div>
+    </div>
+    <div class="empty-state" id="loading-state">Loading events&hellip;</div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="how-section">
+    <div class="section-head">
+      <h2>How It Works</h2>
+      <div class="rule"></div>
+    </div>
+    <div class="how-grid">
+      <div class="how-card">
+        <span class="how-num">1</span>
+        <span class="how-icon">⚾</span>
+        <div class="how-title">Cubs Pitcher Deals Heat</div>
+        <p class="how-desc">A Cubs pitcher strikes out 3 batters in a single inning at Wrigley Field during a home game.</p>
+      </div>
+      <div class="how-card">
+        <span class="how-num">2</span>
+        <span class="how-icon">✅</span>
+        <div class="how-title">Event Gets Logged</div>
+        <p class="how-desc">We track the qualifying inning here &mdash; automatically synced nightly from MLB game data.</p>
+      </div>
+      <div class="how-card">
+        <span class="how-num">3</span>
+        <span class="how-icon">🍟</span>
+        <div class="how-title">Free Nuggets Tomorrow</div>
+        <p class="how-desc">Head to any Chick-fil-A in the Chicagoland area the next day and open the app to claim your free nuggets. No purchase necessary.</p>
+      </div>
+    </div>
   </div>
 
 </main>
 
 <footer class="site-footer">
   <div class="footer-inner">
-    <div class="footer-left">Data sourced from MLB Stats API &middot; Updated automatically</div>
-    <div class="footer-right">
-      <span>&copy; <span id="footer-year"></span></span>
+    <span class="footer-text">&copy; <span id="footer-year"></span> Cubs Free Nuggets Tracker &mdash; Not affiliated with the Chicago Cubs or Chick-fil-A</span>
+    <div class="footer-links">
       <a href="privacy.html" class="footer-link">Privacy</a>
-      <a href="admin.html" class="footer-admin-link">Admin &rsaquo;</a>
+      <a href="admin.html" class="footer-link">Admin</a>
     </div>
   </div>
 </footer>
