@@ -4,12 +4,12 @@
   let events = [];
 
   try {
-    const res = await fetch("/api/events", { signal: AbortSignal.timeout(10_000) });
+    const res = await fetch("/api/events");
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     events = await res.json();
   } catch (e) {
     renderStats([]);
-    renderEvents([], true);
+    renderEvents([]);
     console.error("Failed to load events:", e);
     return;
   }
@@ -43,7 +43,7 @@ function renderStats(events) {
   document.getElementById("stat-last-date").textContent = `Last: ${formatDate(lastDate)}`;
 }
 
-function renderEvents(events, error = false) {
+function renderEvents(events) {
   const list    = document.getElementById("events-list");
   const loading = document.getElementById("loading-state");
   if (loading) loading.remove();
@@ -52,10 +52,8 @@ function renderEvents(events, error = false) {
     events.length ? `${events.length} event${events.length > 1 ? "s" : ""}` : "None yet";
 
   if (!events.length) {
-    const msg = error
-      ? "Could not load events — please try refreshing the page."
-      : "No qualifying events yet this season — check back after a home game!";
-    list.insertAdjacentHTML("beforeend", `<div class="empty-state">${msg}</div>`);
+    list.insertAdjacentHTML("beforeend",
+      `<div class="empty-state">No qualifying events yet this season — check back after a home game!</div>`);
     return;
   }
 
