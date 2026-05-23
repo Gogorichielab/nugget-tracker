@@ -5,7 +5,11 @@
 
   try {
     const res = await fetch("/api/events", { signal: AbortSignal.timeout(10_000) });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      if (body.hint) console.error("API diagnostic:", body.hint);
+      throw new Error(`HTTP ${res.status}${body.error ? `: ${body.error}` : ""}`);
+    }
     events = await res.json();
   } catch (e) {
     renderStats([]);
