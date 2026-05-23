@@ -5,13 +5,12 @@ on:
     branches:
       - main
   pull_request:
-    types: [opened, synchronize, reopened, closed]
+    types: [opened, synchronize, reopened]
     branches:
       - main
 
 jobs:
   build_and_deploy_job:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
@@ -28,29 +27,23 @@ jobs:
           fi
           find src -type f -name '*.html' -print0 \
             | xargs -0 sed -i "s|__CF_BEACON_TOKEN__|${CF_BEACON_TOKEN}|g"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
       - name: Build And Deploy
-        id: builddeploy
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_VICTORIOUS_CLIFF_0A4B70B0F }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
-          action: "upload"
-          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "src" # App source code path
-          api_location: "api" # Api source code path - optional
-          output_location: "" # Built app content directory - optional
-          skip_app_build: true # Static files are already deployable from src
-          ###### End of Repository/Build Configurations ######
-
-  close_pull_request_job:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
-    runs-on: ubuntu-latest
-    name: Close Pull Request Job
-    steps:
-      - name: Close Pull Request
-        id: closepullrequest
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_VICTORIOUS_CLIFF_0A4B70B0F }}
-          action: "close"
+        env:
+          SWA_CLI_DEPLOYMENT_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_VICTORIOUS_CLIFF_0A4B70B0F }}
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            npx --yes @azure/static-web-apps-cli@2.0.9 deploy nugget-tracker \
+              --swa-config-location . \
+              --api-language node \
+              --api-version 20 \
+              --env production
+          else
+            npx --yes @azure/static-web-apps-cli@2.0.9 deploy nugget-tracker \
+              --swa-config-location . \
+              --api-language node \
+              --api-version 20 \
+              --dry-run
+          fi
