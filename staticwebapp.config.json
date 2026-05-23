@@ -11,10 +11,6 @@
     {
       "route": "/privacy",
       "rewrite": "/privacy.html"
-    },
-    {
-      "route": "/*",
-      "rewrite": "/index.html"
     }
   ],
   "navigationFallback": {
