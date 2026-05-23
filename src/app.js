@@ -18,29 +18,34 @@
   renderEvents(events);
 })();
 
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+
 function renderStats(events) {
-  document.getElementById("stat-total").textContent = events.length || "0";
+  setText("stat-total", events.length || "0");
 
   if (!events.length) {
-    document.getElementById("stat-pitcher-name").textContent = "—";
-    document.getElementById("stat-pitcher-count").textContent = "";
-    document.getElementById("stat-days").textContent = "—";
-    document.getElementById("stat-last-date").textContent = "";
+    setText("stat-pitcher-name", "—");
+    setText("stat-pitcher-count", "");
+    setText("stat-days", "—");
+    setText("stat-last-date", "");
     return;
   }
 
   const counts = {};
   for (const e of events) counts[e.pitcher] = (counts[e.pitcher] ?? 0) + 1;
   const [topName, topCount] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-  document.getElementById("stat-pitcher-name").textContent = topName.split(" ").pop();
-  document.getElementById("stat-pitcher-count").textContent = `${topCount} qualifying inning${topCount > 1 ? "s" : ""}`;
+  setText("stat-pitcher-name", topName.split(" ").pop());
+  setText("stat-pitcher-count", `${topCount} qualifying inning${topCount > 1 ? "s" : ""}`);
 
   const sorted = [...events].sort((a, b) => b.gameDate.localeCompare(a.gameDate));
   const lastDate = sorted[0].gameDate;
   const today = new Date().toISOString().split("T")[0];
   const diff = Math.floor((new Date(today) - new Date(lastDate)) / 86400000);
-  document.getElementById("stat-days").textContent = diff === 0 ? "🔥" : diff;
-  document.getElementById("stat-last-date").textContent = `Last: ${formatDate(lastDate)}`;
+  setText("stat-days", diff === 0 ? "🔥" : diff);
+  setText("stat-last-date", `Last: ${formatDate(lastDate)}`);
 }
 
 function renderEvents(events, error = false) {

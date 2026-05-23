@@ -11,6 +11,18 @@
     {
       "route": "/privacy",
       "rewrite": "/privacy.html"
+    },
+    {
+      "route": "/*.js",
+      "headers": {
+        "Cache-Control": "no-cache"
+      }
+    },
+    {
+      "route": "/*.css",
+      "headers": {
+        "Cache-Control": "no-cache"
+      }
     }
   ],
   "navigationFallback": {
