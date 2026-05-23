@@ -109,11 +109,27 @@ module.exports = async function (context, req) {
     if (method === "GET") {
       const year = String(new Date().getFullYear());
       const events = [];
-      const iter = client.listEntities({
-        queryOptions: { filter: `PartitionKey eq '${escapeOData(year)}'` },
-      });
-      for await (const entity of iter) {
-        events.push(rowToEvent(entity));
+      try {
+        const iter = client.listEntities({
+          queryOptions: { filter: `PartitionKey eq '${escapeOData(year)}'` },
+        });
+        for await (const entity of iter) {
+          events.push(rowToEvent(entity));
+        }
+      } catch (storageError) {
+        const errorId = uuidv4();
+        context.log.error(`[events-read error ${errorId}]`, storageError);
+        context.res = {
+          status: 503,
+          body: {
+            error: "Storage unavailable",
+            hint: storageError.statusCode === 404
+              ? "Table does not exist — check that NuggetEvents table was created in your storage account"
+              : "Could not reach Azure Table Storage — verify AZURE_STORAGE_CONNECTION_STRING and storage account status",
+            errorId,
+          },
+        };
+        return;
       }
       events.sort((a, b) => b.gameDate.localeCompare(a.gameDate));
       context.res = { status: 200, body: events };
