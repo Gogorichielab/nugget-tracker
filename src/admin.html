@@ -3,54 +3,44 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin &mdash; Cubs Nuggets Tracker</title>
-  <link rel="stylesheet" href="style.css?v=2" />
+  <title>Admin — Cubs Nuggets Tracker</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<div class="header-band-top"></div>
-<div class="header-band-gold"></div>
+<div class="top-stripe"></div>
 <header class="site-header">
   <div class="header-inner">
-    <div class="logo-mark">C</div>
-    <div class="header-copy">
-      <div class="header-eyebrow">Cubs Nuggets Tracker</div>
-      <h1 class="header-title">Admin<br><span>Panel</span></h1>
-      <p class="header-sub">Manage qualifying pitcher events for the current season.</p>
+    <svg class="header-logo" viewBox="0 0 60 60" aria-hidden="true">
+      <circle cx="30" cy="30" r="30" fill="#CC3433"/>
+      <text x="30" y="44" text-anchor="middle" font-family="Georgia,serif"
+            font-weight="bold" font-size="38" fill="#ffffff">C</text>
+    </svg>
+    <div class="header-text">
+      <h1>Cubs Nuggets — Admin</h1>
+      <p>Manage qualifying pitcher events</p>
     </div>
-    <div class="header-nav">
-      <a href="index.html" class="header-action-link">← Public Site</a>
-      <button id="logout-btn" class="header-action-link hidden">Log Out</button>
-    </div>
+    <a href="index.html" class="admin-link">← Public site</a>
+    <button id="logout-btn" class="admin-link" onclick="adminLogout()">Log out</button>
   </div>
 </header>
-<div class="header-band-bottom"></div>
 
 <main class="main-content">
 
-  <!-- ── PASSWORD GATE ── -->
+  <!-- Password gate -->
   <div class="password-gate" id="password-gate">
     <div class="password-card">
-      <div class="password-card-header">
-        <div class="password-card-eyebrow">Admin Access Required</div>
-      </div>
-      <div class="password-card-body">
-        <h2>Unlock Admin</h2>
-        <p>Enter your password to manage events</p>
-        <input type="password" id="password-input" placeholder="Password" autofocus />
-        <button class="btn btn-primary btn-full" id="unlock-btn">Unlock</button>
-        <p id="pw-error" class="pw-error"></p>
-      </div>
+      <h2>Admin Login</h2>
+      <input type="password" id="password-input" placeholder="Enter password" autofocus />
+      <button class="btn btn-primary btn-full" id="unlock-btn">Unlock</button>
+      <p id="pw-error" class="pw-error"></p>
     </div>
   </div>
 
-  <!-- ── ADMIN PANEL ── -->
+  <!-- Admin panel (hidden until authenticated) -->
   <div id="admin-panel" class="hidden">
 
-    <div class="section-head">
-      <h2 id="form-heading">Add Event</h2>
-      <div class="rule"></div>
-    </div>
+    <div class="section-heading" id="form-heading">Add Event</div>
 
     <div class="form-card">
       <input type="hidden" id="edit-id" />
@@ -74,22 +64,23 @@
       </div>
     </div>
 
-    <div class="section-head">
-      <h2>All Events</h2>
-      <div class="rule"></div>
+    <div class="section-heading">All Events</div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Game Date</th>
+            <th>Redemption Date</th>
+            <th>Pitcher</th>
+            <th>Inning</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="admin-tbody">
+          <tr><td colspan="5" class="empty-state">Loading…</td></tr>
+        </tbody>
+      </table>
     </div>
-
-    <div class="admin-events-list" id="admin-events-list">
-      <div class="admin-event-row header-row">
-        <div class="event-cell">Game Date</div>
-        <div class="event-cell">Redemption Date</div>
-        <div class="event-cell">Pitcher</div>
-        <div class="event-cell">Inning</div>
-        <div class="event-cell">Actions</div>
-      </div>
-      <div class="empty-state" id="admin-loading">Loading&hellip;</div>
-    </div>
-
   </div>
 
 </main>
@@ -97,15 +88,10 @@
 <div class="toast" id="toast"></div>
 
 <footer class="site-footer">
-  <div class="footer-inner">
-    <span class="footer-text">&copy; <span id="footer-year"></span> Cubs Free Nuggets Tracker &mdash; Admin Panel</span>
-    <div class="footer-links">
-      <a href="index.html" class="footer-link">← Public Site</a>
-    </div>
-  </div>
+  &copy; <span id="footer-year"></span> Cubs Free Nuggets Tracker
 </footer>
 
-<script src="admin.js?v=2"></script>
+<script src="admin.js"></script>
 <!-- Cloudflare Web Analytics: public analytics token, not a secret credential -->
 <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "__CF_BEACON_TOKEN__"}'></script>
 </body>

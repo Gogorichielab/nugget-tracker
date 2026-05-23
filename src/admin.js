@@ -10,7 +10,6 @@ function adminLogout() {
   sessionStorage.removeItem("admin_token");
   sessionStorage.removeItem("admin_login_time");
   document.getElementById("admin-panel").classList.add("hidden");
-  document.getElementById("logout-btn").classList.add("hidden");
   document.getElementById("password-gate").classList.remove("hidden");
   document.getElementById("password-input").value = "";
 }
@@ -22,9 +21,8 @@ function adminLogout() {
   document.getElementById("unlock-btn").addEventListener("click", adminLogin);
   document.getElementById("save-btn").addEventListener("click", submitForm);
   document.getElementById("cancel-btn").addEventListener("click", cancelEdit);
-  document.getElementById("logout-btn").addEventListener("click", adminLogout);
 
-  document.getElementById("admin-events-list").addEventListener("click", (e) => {
+  document.getElementById("admin-tbody").addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-action]");
     if (!btn) return;
     const id = btn.dataset.id;
@@ -79,7 +77,6 @@ async function adminLogin() {
 async function attemptLoad() {
   document.getElementById("password-gate").classList.add("hidden");
   document.getElementById("admin-panel").classList.remove("hidden");
-  document.getElementById("logout-btn").classList.remove("hidden");
   await loadEvents();
 }
 
@@ -166,37 +163,25 @@ async function deleteEvent(id) {
 // ── Render ────────────────────────────────────────────────────────────────
 
 function renderAdminTable() {
-  const container = document.getElementById("admin-events-list");
-
-  // Remove loading placeholder and any previous data rows (keep header row at [0])
-  const loading = document.getElementById("admin-loading");
-  if (loading) loading.remove();
-  while (container.children.length > 1) {
-    container.removeChild(container.lastChild);
-  }
+  const tbody = document.getElementById("admin-tbody");
 
   if (events.length === 0) {
-    container.insertAdjacentHTML("beforeend",
-      `<div class="empty-state">No events yet — add one above.</div>`);
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No events yet.</td></tr>`;
     return;
   }
 
   const sorted = [...events].sort((a, b) => b.gameDate.localeCompare(a.gameDate));
-  sorted.forEach((e) => {
-    const row = document.createElement("div");
-    row.className = "admin-event-row";
-    row.innerHTML = `
-      <div class="event-cell cell-date">${formatDate(e.gameDate)}</div>
-      <div class="event-cell cell-redemption">${formatDate(e.redemptionDate)}</div>
-      <div class="event-cell cell-pitcher">${escHtml(e.pitcher)}</div>
-      <div class="event-cell cell-inning">${ordinal(e.inning)}</div>
-      <div class="cell-actions">
-        <button class="btn btn-warning" data-action="edit"   data-id="${escHtml(e.id)}">Edit</button>
-        <button class="btn btn-danger"  data-action="delete" data-id="${escHtml(e.id)}">Delete</button>
-      </div>
-    `;
-    container.appendChild(row);
-  });
+  tbody.innerHTML = sorted.map((e) => `
+    <tr>
+      <td>${formatDate(e.gameDate)}</td>
+      <td>${formatDate(e.redemptionDate)}</td>
+      <td>${escHtml(e.pitcher)}</td>
+      <td>${ordinal(e.inning)}</td>
+      <td class="actions-cell">
+        <button class="btn btn-warning" data-action="edit" data-id="${escHtml(e.id)}">Edit</button>
+        <button class="btn btn-danger" data-action="delete" data-id="${escHtml(e.id)}">Delete</button>
+      </td>
+    </tr>`).join("");
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────
@@ -209,13 +194,15 @@ function formatDate(iso) {
 }
 
 function ordinal(n) {
-  const s = ["th","st","nd","rd"], v = n % 100;
+  const s = ["th","st","nd","rd"];
+  const v = n % 100;
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
 function escHtml(str) {
-  return String(str).replace(/[&<>"']/g,
-    (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[c]);
+  return String(str).replace(/[&<>"']/g, (c) =>
+    ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" })[c]
+  );
 }
 
 let toastTimer;

@@ -13,22 +13,8 @@
       "rewrite": "/privacy.html"
     },
     {
-      "route": "/*.html",
-      "headers": {
-        "Cache-Control": "no-cache"
-      }
-    },
-    {
-      "route": "/*.js",
-      "headers": {
-        "Cache-Control": "no-cache"
-      }
-    },
-    {
-      "route": "/*.css",
-      "headers": {
-        "Cache-Control": "no-cache"
-      }
+      "route": "/*",
+      "rewrite": "/index.html"
     }
   ],
   "navigationFallback": {
@@ -44,6 +30,7 @@
     "Content-Security-Policy": "default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' https://static.cloudflareinsights.com; connect-src 'self' https://cloudflareinsights.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
   },
   "platform": {
-    "apiRuntime": "node:20"
+    "apiRuntime": "node:20",
+    "apiLocation": "api"
   }
 }
