@@ -3,27 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Privacy Policy &mdash; Cubs Free Nuggets Tracker</title>
+  <title>Privacy Policy — Cubs Free Nuggets Tracker</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<div class="header-band-top"></div>
-<div class="header-band-gold"></div>
+<div class="top-stripe" aria-hidden="true"></div>
+
 <header class="site-header">
   <div class="header-inner">
-    <div class="logo-mark">C</div>
-    <div class="header-copy">
-      <div class="header-eyebrow">Cubs Free Nuggets Tracker</div>
-      <h1 class="header-title">Privacy<br><span>Policy</span></h1>
-      <p class="header-sub">Plain English. No legalese. We respect your time and your data.</p>
+    <svg class="header-logo" viewBox="0 0 60 60" aria-hidden="true">
+      <circle cx="30" cy="30" r="30" fill="#CC3433" />
+      <text x="30" y="44" text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-size="38" fill="#ffffff">C</text>
+    </svg>
+    <div class="header-text">
+      <h1>Cubs Free Nuggets Tracker</h1>
+      <p>Privacy Policy</p>
     </div>
-    <div class="header-nav">
-      <a href="index.html" class="header-action-link">← Back to site</a>
-    </div>
+    <a href="index.html" class="admin-link">← Back to site</a>
   </div>
 </header>
-<div class="header-band-bottom"></div>
+
+<section class="privacy-hero">
+  <h2>Privacy Policy</h2>
+  <p>Plain English. No legalese. We respect your time and your data.</p>
+</section>
 
 <main class="privacy-content">
   <a href="index.html" class="back-link">← Back to Cubs Nuggets Tracker</a>
@@ -86,18 +90,18 @@
     <p>This site uses the following third-party services:</p>
     <ul>
       <li>
-        <strong>Cloudflare</strong> &mdash; CDN and privacy-friendly analytics.
+        <strong>Cloudflare</strong> — CDN and privacy-friendly analytics.
         <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
       </li>
       <li>
-        <strong>Microsoft Azure</strong> &mdash; Hosting and data storage.
+        <strong>Microsoft Azure</strong> — Hosting and data storage.
         <a href="https://privacy.microsoft.com/en-us/privacystatement" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
       </li>
       <li>
-        <strong>Google Fonts</strong> &mdash; Barlow Condensed and Barlow from Google's CDN.
+        <strong>Google Fonts</strong> — Bebas Neue and DM Sans from Google's CDN.
         <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
       </li>
-      <li><strong>MLB Stats API</strong> &mdash; Public baseball statistics data.</li>
+      <li><strong>MLB Stats API</strong> — Public baseball statistics data.</li>
     </ul>
   </section>
 
@@ -130,10 +134,11 @@
 
 <footer class="site-footer">
   <div class="footer-inner">
-    <span class="footer-text">&copy; <span id="footer-year"></span> Cubs Free Nuggets Tracker</span>
-    <div class="footer-links">
+    <div class="footer-left">Cubs Free Nuggets Tracker</div>
+    <div class="footer-right">
+      <span>&copy; <span id="footer-year"></span></span>
       <a href="index.html" class="footer-link">Home</a>
-      <a href="admin.html" class="footer-link">Admin</a>
+      <a href="admin.html" class="footer-admin-link">Admin &rsaquo;</a>
     </div>
   </div>
 </footer>
