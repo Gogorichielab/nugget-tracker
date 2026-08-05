@@ -1,28 +1,94 @@
-# Dependabot configuration for SwearJar
-# Runs once a month on the 16th of each month.
+# Dependabot configuration — Nugget Tracker
+#
+# Structure follows GitHub's guidance on reducing Dependabot noise:
+#   "Tame Dependabot: group your updates, slow the cadence, keep security fast"
+#   https://github.blog/security/supply-chain-security/tame-dependabot-group-your-updates-slow-the-cadence-keep-security-fast/
+#   "Cutting through the noise: how to prioritize Dependabot alerts"
+#   https://github.blog/security/application-security/cutting-through-the-noise-how-to-prioritize-dependabot-alerts/
+#
+# Three ideas from those posts drive this file:
+#
+#   1. GROUP. Each ecosystem collapses into one pull request instead of one per
+#      dependency. `open-pull-requests-limit` only caps the flood; grouping is
+#      what removes it.
+#   2. SLOW THE ROUTINE CADENCE. Version updates run once a month, at 03:00
+#      America/Los_Angeles, rather than trickling in all month.
+#   3. KEEP SECURITY FAST. The schedule below governs VERSION updates only.
+#      Dependabot security updates open as soon as an advisory is published,
+#      whatever this cron says. Never move security fixes behind this cadence.
+#
+# On the schedule keys: `time` and `timezone` set when the monthly check runs,
+# here 03:00 Pacific. GitHub documents `schedule.day` as a weekly-schedule
+# option that takes a weekday name, so it does not pin a day of the month —
+# Dependabot picks the monthly run day. If a specific calendar day is ever
+# required, that needs `interval: "cron"` with a `cronjob` expression instead.
+#
+# America/Los_Angeles observes DST, so this is 03:00 Pacific local either way:
+# PST (UTC-8) roughly Nov–Mar, PDT (UTC-7) roughly Mar–Nov.
+#
+# Cooldown gives a release time to prove itself before Dependabot proposes it,
+# with a longer wait for majors — those are the ones that break a build.
 
 version: 2
+
 updates:
-  # Keep npm dependencies in api/ up to date
+  # ── npm (Azure Functions API) ──────────────────────────────────────────────
   - package-ecosystem: "npm"
     directory: "/api"
     schedule:
       interval: "monthly"
-      day: 16
-    open-pull-requests-limit: 1
+      day: "sunday"
+      time: "03:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
+    labels:
+      - "dependencies"
+    commit-message:
+      # Yields "chore(deps): ..." and "chore(deps-dev): ...", which satisfies
+      # the Conventional Commits rule in agent.md.
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
     groups:
       npm-all:
+        applies-to: version-updates
+        patterns:
+          - "*"
+      npm-security:
+        applies-to: security-updates
         patterns:
           - "*"
 
-  # Keep GitHub Actions versions up to date
+  # ── GitHub Actions ─────────────────────────────────────────────────────────
+  # Covers the SWA deploy, the nightly mlb-sync cron, and maintenance workflows.
+  # Pinned action versions are a supply-chain surface too.
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "monthly"
-      day: 16
-    open-pull-requests-limit: 1
+      day: "sunday"
+      time: "03:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 5
+    cooldown:
+      # This ecosystem supports default-days only; the semver-* cooldown keys
+      # are rejected by Dependabot for non-semver ecosystems.
+      default-days: 7
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
     groups:
       actions-all:
+        applies-to: version-updates
+        patterns:
+          - "*"
+      actions-security:
+        applies-to: security-updates
         patterns:
           - "*"
