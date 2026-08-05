@@ -74,8 +74,9 @@ updates:
       timezone: "America/Los_Angeles"
     open-pull-requests-limit: 5
     cooldown:
+      # This ecosystem supports default-days only; the semver-* cooldown keys
+      # are rejected by Dependabot for non-semver ecosystems.
       default-days: 7
-      semver-major-days: 30
     labels:
       - "dependencies"
       - "github-actions"
