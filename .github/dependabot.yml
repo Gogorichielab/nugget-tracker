@@ -11,21 +11,20 @@
 #   1. GROUP. Each ecosystem collapses into one pull request instead of one per
 #      dependency. `open-pull-requests-limit` only caps the flood; grouping is
 #      what removes it.
-#   2. SLOW THE ROUTINE CADENCE. Version updates run once a month — the 28th at
-#      20:00 America/Chicago — rather than trickling in all month.
+#   2. SLOW THE ROUTINE CADENCE. Version updates run once a month, at 03:00
+#      America/Los_Angeles, rather than trickling in all month.
 #   3. KEEP SECURITY FAST. The schedule below governs VERSION updates only.
 #      Dependabot security updates open as soon as an advisory is published,
 #      whatever this cron says. Never move security fixes behind this cadence.
 #
-# Why cron and not `interval: monthly`: `schedule.day` accepts weekday names
-# only and applies to weekly schedules, so it cannot pin a day of the month.
-# A day-of-month schedule requires `interval: cron`. The timezone belongs in
-# `timezone`, never inside the cron expression.
+# On the schedule keys: `time` and `timezone` set when the monthly check runs,
+# here 03:00 Pacific. GitHub documents `schedule.day` as a weekly-schedule
+# option that takes a weekday name, so it does not pin a day of the month —
+# Dependabot picks the monthly run day. If a specific calendar day is ever
+# required, that needs `interval: "cron"` with a `cronjob` expression instead.
 #
-#   cronjob: "0 20 28 * *"  →  minute 0, hour 20, day-of-month 28, every month.
-#
-# America/Chicago observes DST, so this is 20:00 Chicago local time either way:
-# CST (UTC-6) roughly Nov–Mar, CDT (UTC-5) roughly Mar–Nov.
+# America/Los_Angeles observes DST, so this is 03:00 Pacific local either way:
+# PST (UTC-8) roughly Nov–Mar, PDT (UTC-7) roughly Mar–Nov.
 #
 # Cooldown gives a release time to prove itself before Dependabot proposes it,
 # with a longer wait for majors — those are the ones that break a build.
@@ -37,9 +36,10 @@ updates:
   - package-ecosystem: "npm"
     directory: "/api"
     schedule:
-      interval: "cron"
-      cronjob: "0 20 28 * *"
-      timezone: "America/Chicago"
+      interval: "monthly"
+      day: "sunday"
+      time: "03:00"
+      timezone: "America/Los_Angeles"
     open-pull-requests-limit: 5
     cooldown:
       default-days: 7
@@ -68,9 +68,10 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "cron"
-      cronjob: "0 20 28 * *"
-      timezone: "America/Chicago"
+      interval: "monthly"
+      day: "sunday"
+      time: "03:00"
+      timezone: "America/Los_Angeles"
     open-pull-requests-limit: 5
     cooldown:
       default-days: 7
