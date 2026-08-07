@@ -2,7 +2,7 @@
 
 Instructions for Claude Code working in this repository.
 
-> **Read [`agent.md`](agent.md) first.** It is the authoritative, tool-agnostic
+> **Read [`AGENTS.md`](AGENTS.md) first.** It is the authoritative, tool-agnostic
 > project brief. This file adds the Claude-specific bits and repeats only the
 > rules that are easy to get wrong.
 
@@ -46,7 +46,7 @@ following day.
   the tokens, don't invent new ones.
 
 Local setup, `local.settings.json`, and the SWA CLI commands are in
-[`agent.md`](agent.md#development-setup).
+[`AGENTS.md`](AGENTS.md#development-setup).
 
 ---
 
@@ -81,7 +81,7 @@ style(ui): update Cubs colour palette
 ci(swa): update the Static Web Apps deploy workflow
 ```
 
-Full type table and more examples: [`agent.md`](agent.md#commit-conventions--conventional-commits).
+Full type table and more examples: [`AGENTS.md`](AGENTS.md#commit-conventions--conventional-commits).
 
 ---
 
@@ -105,4 +105,4 @@ Handy commands: `/ponytail-review`, `/ponytail-audit`, `/business-problem-framin
 `/business-rule-extraction`, `/acceptance-criteria-writer`,
 `/requirements-quality-check`.
 
-Details, non-Claude install paths, and per-skill guidance: [`agent.md`](agent.md#skills-to-use).
+Details, non-Claude install paths, and per-skill guidance: [`AGENTS.md`](AGENTS.md#skills-to-use).

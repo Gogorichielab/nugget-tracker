@@ -1,4 +1,4 @@
-# agent.md
+# AGENTS.md
 
 Guidance for AI agents working with this codebase.
 

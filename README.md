@@ -30,7 +30,7 @@ Built with:
 
 ## Getting Started
 
-For local setup and deployment instructions, see [agent.md](agent.md).
+For local setup and deployment instructions, see [AGENTS.md](AGENTS.md).
 
 ## Security
 
