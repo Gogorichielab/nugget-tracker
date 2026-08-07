@@ -8,9 +8,9 @@
   },
   "dependencies": {
     "@azure/data-tables": "^13.2.2",
-    "uuid": "^11.1.0"
+    "uuid": "^14.0.1"
   },
   "devDependencies": {
-    "@azure/functions": "^4.3.0"
+    "@azure/functions": "^4.16.2"
   }
 }
