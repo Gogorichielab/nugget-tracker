@@ -48,7 +48,7 @@ updates:
       - "dependencies"
     commit-message:
       # Yields "chore(deps): ..." and "chore(deps-dev): ...", which satisfies
-      # the Conventional Commits rule in agent.md.
+      # the Conventional Commits rule in AGENTS.md.
       prefix: "chore"
       prefix-development: "chore"
       include: "scope"
