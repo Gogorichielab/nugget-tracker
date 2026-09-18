@@ -1,0 +1,180 @@
+name: Delete merged branches
+
+# Housekeeping. Deletes a branch only when every one of these holds:
+#
+#   1. It is not the default branch and is not protected.
+#   2. It is not the head or the base of an open pull request.
+#   3. A pull request from it was merged at least GRACE_DAYS ago.
+#   4. Its tip is the commit GitHub recorded as that merged pull request's
+#      head, or holds nothing the default branch does not already have.
+#
+# Rule 4 is the important one, and it needs both halves. Squash and rebase
+# merges rewrite history, so "is this commit an ancestor of main" alone would
+# wrongly call merged branches unmerged; the recorded head SHA covers those.
+# But a branch merged through the "Merge pull request" button can end up
+# pointing at the merge commit, which is not the recorded head either — so a
+# tip that fails the SHA check is compared against the default branch before
+# the branch is judged still active. A branch holding even one commit of its
+# own is always kept.
+#
+# Deleting a branch does not delete its commits. A deleted branch can be
+# restored from the merged pull request's page for as long as GitHub keeps
+# the ref, so the worst case here is an inconvenience, not lost work.
+#
+# Cron cannot express "every 30 days", so this runs on the first of each
+# month, plus on demand. A manual run deletes immediately; tick dry_run to
+# preview instead.
+
+on:
+  schedule:
+    - cron: "17 9 1 * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "List what would be deleted, without deleting it"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: cleanup-merged-branches
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    name: Delete merged branches
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Delete branches whose pull request has merged
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          DRY_RUN: ${{ inputs.dry_run || false }}
+          GRACE_DAYS: "14"
+        with:
+          script: |
+            const dryRun = process.env.DRY_RUN === 'true';
+            const graceDays = Number(process.env.GRACE_DAYS);
+            const { owner, repo } = context.repo;
+            const cutoff = Date.now() - graceDays * 24 * 60 * 60 * 1000;
+
+            const { data: repoInfo } = await github.rest.repos.get({ owner, repo });
+            const defaultBranch = repoInfo.default_branch;
+            // Compared by id, not by name: ids survive renames and sidestep the
+            // fact that owner/name comparisons are case-sensitive while GitHub
+            // repository names are not.
+            const repoId = repoInfo.id;
+
+            const branches = await github.paginate(github.rest.repos.listBranches, {
+              owner, repo, per_page: 100,
+            });
+            const pulls = await github.paginate(github.rest.pulls.list, {
+              owner, repo, state: 'all', per_page: 100,
+            });
+
+            // A branch a still-open pull request depends on must survive, whether
+            // it is that pull request's source or its target.
+            const openRefs = new Set();
+            for (const pr of pulls) {
+              if (pr.state !== 'open') continue;
+              openRefs.add(pr.base.ref);
+              if (pr.head.repo && pr.head.repo.id === repoId) openRefs.add(pr.head.ref);
+            }
+
+            // Newest merged pull request per branch. Head repo is checked so a
+            // fork's branch of the same name can never speak for ours.
+            const mergedByRef = new Map();
+            for (const pr of pulls) {
+              if (!pr.merged_at) continue;
+              if (!pr.head.repo || pr.head.repo.id !== repoId) continue;
+              const seen = mergedByRef.get(pr.head.ref);
+              if (!seen || pr.number > seen.number) mergedByRef.set(pr.head.ref, pr);
+            }
+
+            const deleted = [];
+            const kept = [];
+            const failed = [];
+
+            for (const branch of branches) {
+              const name = branch.name;
+
+              if (name === defaultBranch) { kept.push([name, 'default branch']); continue; }
+              if (branch.protected) { kept.push([name, 'protected branch']); continue; }
+              if (openRefs.has(name)) { kept.push([name, 'an open pull request depends on it']); continue; }
+
+              const pr = mergedByRef.get(name);
+              if (!pr) { kept.push([name, 'no merged pull request']); continue; }
+              if (branch.commit.sha !== pr.head.sha) {
+                // The branch moved after its pull request merged. Usually that is
+                // real new work — but it is also what the "Merge pull request"
+                // button looks like when the merge commit lands back on the
+                // branch. Ask GitHub whether the tip holds anything the default
+                // branch does not before writing the branch off as still active.
+                let ahead;
+                try {
+                  const { data: diff } = await github.rest.repos.compareCommitsWithBasehead({
+                    owner, repo, basehead: `${defaultBranch}...${name}`,
+                  });
+                  ahead = diff.ahead_by;
+                } catch (error) {
+                  kept.push([name, `could not compare against ${defaultBranch}: ${error.message}`]);
+                  continue;
+                }
+                if (ahead > 0) {
+                  kept.push([name, `carries ${ahead} commit(s) not in ${defaultBranch}`]);
+                  continue;
+                }
+              }
+              if (Date.parse(pr.merged_at) > cutoff) {
+                kept.push([name, `#${pr.number} merged less than ${graceDays} days ago`]);
+                continue;
+              }
+
+              if (dryRun) { deleted.push([name, `#${pr.number}`]); continue; }
+
+              try {
+                await github.rest.git.deleteRef({ owner, repo, ref: `heads/${name}` });
+                deleted.push([name, `#${pr.number}`]);
+              } catch (error) {
+                failed.push([name, error.message]);
+              }
+            }
+
+            const verb = dryRun ? 'Would delete' : 'Deleted';
+            core.summary.addHeading(dryRun ? 'Branch cleanup (preview)' : 'Branch cleanup', 2);
+            core.summary.addRaw(
+              `${verb} ${deleted.length} of ${branches.length} branches. ` +
+              `Grace period ${graceDays} days.`, true);
+
+            if (deleted.length) {
+              core.summary.addHeading(`${verb} (${deleted.length})`, 3);
+              core.summary.addTable([
+                [{ data: 'Branch', header: true }, { data: 'Merged in', header: true }],
+                ...deleted.map(([name, pr]) => [name, pr]),
+              ]);
+            }
+            if (kept.length) {
+              core.summary.addHeading(`Kept (${kept.length})`, 3);
+              core.summary.addTable([
+                [{ data: 'Branch', header: true }, { data: 'Reason', header: true }],
+                ...kept.map(([name, reason]) => [name, reason]),
+              ]);
+            }
+            if (failed.length) {
+              core.summary.addHeading(`Could not delete (${failed.length})`, 3);
+              core.summary.addTable([
+                [{ data: 'Branch', header: true }, { data: 'Error', header: true }],
+                ...failed.map(([name, message]) => [name, message]),
+              ]);
+            }
+            await core.summary.write();
+
+            for (const [name, pr] of deleted) core.info(`${verb}: ${name} (${pr})`);
+            for (const [name, reason] of kept) core.info(`Kept: ${name} — ${reason}`);
+
+            if (failed.length) {
+              core.setFailed(`Failed to delete ${failed.length} branch(es).`);
+            }
