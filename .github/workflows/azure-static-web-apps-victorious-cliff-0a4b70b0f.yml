@@ -1,60 +1,102 @@
+# Adapted from Gogorichielab/.github workflow-templates/azure-static-web-apps.yml
+# Source: organization templates merged in Gogorichielab/.github#2.
+# Keep the original deployment token and Cloudflare beacon injection.
 name: Azure Static Web Apps CI/CD
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
     types: [opened, synchronize, reopened, closed]
-    branches:
-      - main
+    branches: [main]
 
 permissions:
   contents: read
-  pull-requests: write
+
+concurrency:
+  group: swa-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build_and_deploy_job:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
-    runs-on: ubuntu-latest
     name: Build and Deploy Job
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' &&
+       github.event.action != 'closed' &&
+       github.event.pull_request.head.repo.full_name == github.repository &&
+       github.event.pull_request.user.login != 'dependabot[bot]' &&
+       vars.SWA_ENABLE_PREVIEWS == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: ${{ github.event_name == 'pull_request' && 'preview' || 'production' }}
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          persist-credentials: false
           submodules: true
           lfs: false
       - name: Inject Cloudflare Analytics token
         env:
           CF_BEACON_TOKEN: ${{ secrets.CLOUDFLAREKEY }}
+        shell: bash
         run: |
-          if [ -z "${CF_BEACON_TOKEN}" ]; then
+          if [ -z "$CF_BEACON_TOKEN" ]; then
             echo "CLOUDFLAREKEY secret is not set; analytics beacon will be disabled."
           fi
-          find src -type f -name '*.html' -print0 \
-            | xargs -0 sed -i "s|__CF_BEACON_TOKEN__|${CF_BEACON_TOKEN}|g"
+          # Avoid inserting a secret directly into sed replacement syntax.
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          token = os.environ.get("CF_BEACON_TOKEN", "")
+          for path in Path("src").rglob("*.html"):
+              contents = path.read_text(encoding="utf-8")
+              if "__CF_BEACON_TOKEN__" in contents:
+                  path.write_text(contents.replace("__CF_BEACON_TOKEN__", token), encoding="utf-8")
+          PY
+      - name: Check deployment token
+        env:
+          SWA_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_VICTORIOUS_CLIFF_0A4B70B0F }}
+        shell: bash
+        run: test -n "$SWA_TOKEN"
       - name: Build And Deploy
         id: builddeploy
-        uses: Azure/static-web-apps-deploy@v1
+        uses: Azure/static-web-apps-deploy@1a947af9992250f3bc2e68ad0754c0b0c11566c9 # v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_VICTORIOUS_CLIFF_0A4B70B0F }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
-          action: "upload"
-          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "src" # App source code path
-          api_location: "api" # Api source code path - optional
-          output_location: "" # Built app content directory - optional
-          skip_app_build: true # Static files are already deployable from src
-          ###### End of Repository/Build Configurations ######
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: upload
+          app_location: src
+          api_location: api
+          output_location: ''
+          skip_app_build: true
 
   close_pull_request_job:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
-    runs-on: ubuntu-latest
     name: Close Pull Request Job
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.action == 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
+      vars.SWA_ENABLE_PREVIEWS == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: preview
+    permissions:
+      contents: read
     steps:
+      - name: Check deployment token
+        env:
+          SWA_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_VICTORIOUS_CLIFF_0A4B70B0F }}
+        shell: bash
+        run: test -n "$SWA_TOKEN"
       - name: Close Pull Request
         id: closepullrequest
-        uses: Azure/static-web-apps-deploy@v1
+        uses: Azure/static-web-apps-deploy@1a947af9992250f3bc2e68ad0754c0b0c11566c9 # v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_VICTORIOUS_CLIFF_0A4B70B0F }}
-          action: "close"
+          action: close
