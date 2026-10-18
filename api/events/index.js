@@ -107,7 +107,12 @@ module.exports = async function (context, req) {
     const client = await getClient();
 
     if (method === "GET") {
-      const year = String(new Date().getFullYear());
+      const requestedYear = req.query && req.query.year;
+      if (requestedYear !== undefined && (typeof requestedYear !== "string" || !/^20\\d{2}$/.test(requestedYear) || Number(requestedYear) > new Date().getFullYear())) {
+        context.res = { status: 400, body: { error: "Invalid year" } };
+        return;
+      }
+      const year = requestedYear || String(new Date().getFullYear());
       const events = [];
       const iter = client.listEntities({
         queryOptions: { filter: `PartitionKey eq '${escapeOData(year)}'` },
