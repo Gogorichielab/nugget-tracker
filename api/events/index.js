@@ -108,7 +108,7 @@ module.exports = async function (context, req) {
 
     if (method === "GET") {
       const requestedYear = req.query && req.query.year;
-      if (requestedYear !== undefined && (typeof requestedYear !== "string" || !/^20\\d{2}$/.test(requestedYear) || Number(requestedYear) > new Date().getFullYear())) {
+      if (requestedYear !== undefined && (typeof requestedYear !== "string" || !/^20[0-9]{2}$/.test(requestedYear) || Number(requestedYear) > new Date().getFullYear())) {
         context.res = { status: 400, body: { error: "Invalid year" } };
         return;
       }
