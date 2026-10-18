@@ -1,29 +1,38 @@
+# Adapted from Gogorichielab/.github workflow-templates/stale-maintenance.yml.
+# Preserves repository policy; schedule remains opt-in until a dry run is reviewed.
 name: Maintenance
 
 on:
   schedule:
-    - cron: '28 8 * * 2'   # Weekly Tuesday 08:28 UTC — kept for stale alignment
+    - cron: '28 8 * * 2'
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Report stale candidates without modifying issues or pull requests
+        type: boolean
+        default: true
 
 permissions:
   contents: read
-  issues: write
-  pull-requests: write
+
+concurrency:
+  group: stale-maintenance
+  cancel-in-progress: false
 
 jobs:
-  # ────────────────────────────────────────────────────────────
-  # Mark stale issues and PRs
-  # Merged-branch cleanup lives in cleanup-merged-branches.yml.
-  # ────────────────────────────────────────────────────────────
   stale:
     name: Mark Stale Issues & PRs
+    if: github.event_name == 'workflow_dispatch' || vars.STALE_AUTOMATION_ENABLED == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
-
+    timeout-minutes: 15
+    permissions:
+      issues: write
+      pull-requests: write
     steps:
-      - uses: actions/stale@v11
+      - uses: actions/stale@4391f3da665fdf50b6810c1a66712fb9ba21aa93 # v11
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+          debug-only: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
           stale-issue-message: >
             This issue has been automatically marked as stale because it has
             not had recent activity. It will be closed if no further activity
@@ -32,9 +41,10 @@ jobs:
             This PR has been automatically marked as stale because it has not
             had recent activity. It will be closed if no further activity
             occurs. Thank you for your contributions.
-          stale-issue-label: 'no-issue-activity'
-          stale-pr-label: 'no-pr-activity'
-          days-before-stale: 60
-          days-before-close: 7
+          stale-issue-label: no-issue-activity
+          stale-pr-label: no-pr-activity
+          days-before-issue-stale: 60
+          days-before-issue-close: 7
           days-before-pr-stale: 30
           days-before-pr-close: 7
+          operations-per-run: 30
